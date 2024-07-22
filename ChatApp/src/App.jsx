@@ -2,30 +2,33 @@ import React, { useEffect, useState } from 'react';
 import io from 'socket.io-client';
 import './App.css';
 
+const socket = io('http://localhost:3000'); // Ensure this URL is correct
+
 function App() {
   const [input, setInput] = useState('');
   const [messages, setMessages] = useState([]);
-  const socket = io(); 
 
   useEffect(() => {
-    socket.on('connect', () => {
+    socket.on('connection', () => {
       console.log('connected');
     });
-
+ 
     socket.on('message', (msg) => {
-      setMessages((prevMessages) => [...prevMessages, { text: msg, type: 'received' }]);
+      console.log(msg);
+      setMessages((prevMessages) => [...prevMessages,{ text: msg, type: 'received' }]);
     });
 
     return () => {
-      socket.disconnect(); 
+      socket.off('message');
+      socket.disconnect();
     };
-  }, [socket]);
+  }, []);
 
   const handleSubmit = (e) => {
     e.preventDefault();
     if (input.trim()) {
       socket.emit('message', input);
-      setMessages((prevMessages) => [...prevMessages, { text: input, type: 'sent' }]);
+      // setMessages((prevMessages) => [...prevMessages, { text: input, type: 'sent' }]);
       setInput('');
     }
   };
