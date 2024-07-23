@@ -16,10 +16,10 @@ server.listen(port, () => {
 
 io.on('connection', (socket) => {
   console.log('A user connected');
-  socket.broadcast.emit("user connected", {
-    userID: socket.id,
-    username: socket.username,
-  });
+  // socket.broadcast.emit("user connected", {
+  //   userID: socket.id,
+  //   username: socket.username,
+  // });
 
   // Handle login event
   socket.on('login', (data) => {
@@ -50,7 +50,7 @@ io.on('connection', (socket) => {
     if (recipient) {
       socket.to(recipient.userID).emit('private_message', {
         content,
-        from: from,
+        from,
       });
     } else {
       socket.emit('error', 'User not found');
@@ -64,6 +64,7 @@ io.on('connection', (socket) => {
     if (index !== -1) {
       users.splice(index, 1);
     }
+    console.log("users", users);
     io.emit('update_users', users);
   });
 });
