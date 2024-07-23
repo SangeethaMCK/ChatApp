@@ -4,7 +4,7 @@ import './App.css';
 
 const socket = io('http://localhost:3000'); // Ensure this URL is correct
 
-function App({ username }) {
+function ChatArea({ username }) {
   const [input, setInput] = useState('');
   const [messages, setMessages] = useState([]);
   const [recipient, setRecipient] = useState('');
@@ -17,9 +17,9 @@ function App({ username }) {
     });
 
     // Listen for private messages
-    socket.on('private_message_data', ({ content, from }) => {
-      console.log("private_message", { content, from });
-      setMessages((prevMessages) => [...prevMessages, { text: content, from, type: 'private' }]);
+    socket.on('private_message', (data) => {
+      console.log("private_message", data);
+      setMessages((prevMessages) => [...prevMessages, { data, type: 'received' }]);
     });
 
     // Listen for updates to the user list
@@ -36,47 +36,25 @@ function App({ username }) {
     };
   }, []);
 
- 
-
   const handleSubmit = (e) => {
     e.preventDefault();
     if (input.trim()) {
       if (recipient.trim()) {
-        console.log("recipient", recipient);
-        socket.emit('private_message', { content: input, to: recipient });
-        setMessages((prevMessages) => [...prevMessages, { text: input, type: 'sent', recipient }]);
+        console.log("recipient", recipient);  
+        socket.emit('private_message', { recipientUsername: recipient, message: input });
       } else {
         socket.emit('message', input);
-        setMessages((prevMessages) => [...prevMessages, { text: input, type: 'sent' }]);
       }
+      setMessages((prevMessages) => [...prevMessages, { text: input, type: 'sent' }]);
       setInput('');
     }
-  };
-
-  const handleUserClick = (e) => {
-    console.log("handleUserClick", e.target.innerText);
-    setRecipient(e.target.innerText);
   };
 
   return (
     <div className="App">
       <h2>Chat App - {username}</h2>
-      <div>
-        <h3>Users:</h3>
-        <div className='users' onClick={handleUserClick}>
-          {users.map((user, index) => (
-            <div key={index}>{user}</div>
-          ))}
-        </div>
-      </div>
+      
       <form id="form" onSubmit={handleSubmit}>
-        <input
-          type="text"
-          id="recipient"
-          placeholder="Recipient username (optional)"
-          value={recipient}
-          onChange={(e) => setRecipient(e.target.value)}
-        />
         <input
           type="text"
           id="input"
@@ -89,7 +67,7 @@ function App({ username }) {
       <div id="messages">
         {messages.map((msg, index) => (
           <p key={index} className={`message ${msg.type}`}>
-            {msg.text} {msg.type === 'private' && `(from: ${msg.from})`}
+            {msg.text}
           </p>
         ))}
       </div>
@@ -97,4 +75,4 @@ function App({ username }) {
   );
 }
 
-export default App;
+export default ChatArea;
