@@ -1,7 +1,7 @@
 const http = require('http');
 const socketio = require('socket.io');
 
-const port = 3000;
+const port = 3001;
 const server = http.createServer();
 const io = socketio(server, {
   cors: {
@@ -9,20 +9,26 @@ const io = socketio(server, {
   },
 });
 
-const users = {}; // Store users with their socket IDs
-
+const users = [];
 server.listen(port, () => {
   console.log(`Server is listening on port ${port}`);
 });
 
 io.on('connection', (socket) => {
   console.log('A user connected');
+  socket.broadcast.emit("user connected", {
+    userID: socket.id,
+    username: socket.username,
+  });
 
   // Handle login event
   socket.on('login', (data) => {
     console.log('login', data);
     if (data.username) {
-      users[socket.id] = data.username;
+      users.push({
+        userID: socket.id,
+        username: data.username,
+      });
       console.log("users", users);
       io.emit('update_users', users);
     } else {
@@ -37,15 +43,14 @@ io.on('connection', (socket) => {
   });
 
   // Handle private messages
-  socket.on('private_message', ({ content, to }) => {
+  socket.on('private_message', ({ content, to , from }) => {
     console.log("private_message", { content, to });
-    const recipientSocketId = Object.keys(users).find(socketId => users[socketId] === to);
-    console.log("recipientSocketId", recipientSocketId);
 
-    if (recipientSocketId) {
-      socket.to(recipientSocketId).emit('private_message_data', {
+    const recipient = users.find(user => user.username === to);
+    if (recipient) {
+      socket.to(recipient.userID).emit('private_message', {
         content,
-        from: socket.id,
+        from: from,
       });
     } else {
       socket.emit('error', 'User not found');
@@ -55,7 +60,10 @@ io.on('connection', (socket) => {
   // Handle user disconnect
   socket.on('disconnect', () => {
     console.log('A user disconnected');
-    delete users[socket.id];
+    const index = users.findIndex(user => user.userID === socket.id);
+    if (index !== -1) {
+      users.splice(index, 1);
+    }
     io.emit('update_users', users);
   });
 });

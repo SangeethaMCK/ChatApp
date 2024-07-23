@@ -22,10 +22,10 @@
 }
 .sent {
   background-color: #e1ffc7;
-  margin-left:90%;
+  /* margin-left:90%; */
  
 }
 .received {
   background-color: #f1f0f0; 
-  margin-right: 90%;
+  /* margin-right: 90%; */
 }

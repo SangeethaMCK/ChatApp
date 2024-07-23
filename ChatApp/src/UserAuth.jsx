@@ -3,7 +3,12 @@ import io from 'socket.io-client';
 import App from './App';
 import './App.css';
 
-const socket = io('http://localhost:3000'); 
+const socket = io('http://localhost:3001', {
+  auth: {
+    sessionID: localStorage.getItem('sessionID') || '',
+  }
+});
+
 
 function UserAuth() {
   const [username, setUsernameInput] = useState('');
@@ -19,7 +24,7 @@ function UserAuth() {
   };
 
   if (authenticated) {
-    return <App username={username} />;
+    return <App username={username} socket={socket} />;
   }
 
   return (
