@@ -1,11 +1,15 @@
 import React, { useEffect, useState } from 'react';
 import './App.css';
+import { useParams } from 'react-router';
 
-function ChatArea({ username, socket, recipient }) {
+function ChatArea({ socket }) {
+  const { username, recipient, roomName } = useParams();
   const [input, setInput] = useState('');
   const [messages, setMessages] = useState([]);
 
   useEffect(() => {
+    socket.emit('load_messages', username);
+
     // Listen for regular messages
     socket.on('message', (msg) => {
       setMessages((prevMessages) => [...prevMessages, { text: msg, type: 'received' }]);
@@ -16,18 +20,34 @@ function ChatArea({ username, socket, recipient }) {
       setMessages((prevMessages) => [...prevMessages, { text: data.content, type: 'received', from: data.from }]);
     });
 
+    // Listen for room messages
+    socket.on('room_message', (data) => {
+      setMessages((prevMessages) => [...prevMessages, { text: data.content, type: 'received', from: data.from }]);
+    });
+
+    // Join room if specified
+    if (roomName) {
+      socket.emit('join_room', roomName);
+    }
+
     // Cleanup on unmount
     return () => {
       socket.off('message');
       socket.off('private_message');
+      socket.off('room_message');
+      if (roomName) {
+        socket.emit('leave_room', roomName);
+      }
     };
-  }, [socket]);
+  }, [socket, username, roomName]);
 
   const handleSubmit = (e) => {
     e.preventDefault();
     if (input.trim()) {
       if (recipient.trim()) {
         socket.emit('private_message', { content: input, to: recipient, from: username });
+      } else if (roomName.trim()) {
+        socket.emit('room_message', { content: input, roomName, from: username });
       } else {
         socket.emit('message', input);
       }
@@ -38,7 +58,7 @@ function ChatArea({ username, socket, recipient }) {
 
   return (
     <div className="ChatArea">
-      <h2>{username}- Chat with {recipient}</h2>
+      <h2>{username} - Chat with {recipient || `room ${roomName}`}</h2>
       <form id="form" onSubmit={handleSubmit}>
         <input
           type="text"

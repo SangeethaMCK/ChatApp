@@ -1,12 +1,12 @@
 import React from 'react'
 import ReactDOM from 'react-dom/client'
-import App from './App.jsx'
-import UserAuth from './UserAuth.jsx'
 import './index.css'
+import UserAuth from './UserAuth.jsx'
+import Chatapp from './Chatapp.jsx'
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
-    <UserAuth />
-    {/* <App /> */}
+  {/* <UserAuth /> */}
+  <Chatapp />
   </React.StrictMode>,
 )

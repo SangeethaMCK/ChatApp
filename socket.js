@@ -5,21 +5,21 @@ const port = 3001;
 const server = http.createServer();
 const io = socketio(server, {
   cors: {
-    origin: '*',
+    origin: '*', 
   },
 });
 
+const rooms = {};
 const users = [];
+
 server.listen(port, () => {
   console.log(`Server is listening on port ${port}`);
 });
 
 io.on('connection', (socket) => {
   console.log('A user connected');
-  // socket.broadcast.emit("user connected", {
-  //   userID: socket.id,
-  //   username: socket.username,
-  // });
+ 
+  socket.join("myRoom");
 
   // Handle login event
   socket.on('login', (data) => {
@@ -29,17 +29,20 @@ io.on('connection', (socket) => {
         userID: socket.id,
         username: data.username,
       });
-      console.log("users", users);
-      io.emit('update_users', users);
     } else {
       socket.emit('error', 'Username is required');
     }
   });
+  socket.on('get_users', () => {
+    io.emit('update_users', users);
+
+  });
 
   // Handle regular messages
   socket.on('message', (msg) => {
-    console.log(`Message received: ${msg}`);
-    io.emit('message', msg); // Broadcast message to all clients
+    console.log(`Message received in room: ${msg}`);
+    socket.broadcast.to("myRoom").emit('message', msg); // Broadcast message to all clients except the sender
+  // io.to("myRoom").emit('message', msg); // Broadcast message to all clients except the sender
   });
 
   // Handle private messages
@@ -51,10 +54,22 @@ io.on('connection', (socket) => {
       socket.to(recipient.userID).emit('private_message', {
         content,
         from,
+      }, ()=>{
+        console.log("responses");
       });
     } else {
       socket.emit('error', 'User not found');
     }
+  });
+
+  socket.join("join_room", (roomName) => {
+    socket.join(roomName);
+  if(!rooms[roomName]) {
+    rooms[roomName] = [];
+  }
+  rooms[roomName].push(socket.id);
+  console.log("rooms", rooms);
+  console.log(`${socket.id} joined room ${roomName}`);
   });
 
   // Handle user disconnect

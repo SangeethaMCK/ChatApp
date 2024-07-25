@@ -1,19 +1,16 @@
 import React, { useState } from 'react';
+
 import io from 'socket.io-client';
 import App from './App';
 import './App.css';
+import { Link } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom';
 
-const socket = io('http://localhost:3001', {
-  auth: {
-    sessionID: localStorage.getItem('sessionID') || '',
-  }
-});
-
-
-function UserAuth() {
+function UserAuth({ socket }) {
   const [username, setUsernameInput] = useState('');
   const [password, setPassword] = useState('');
   const [authenticated, setAuthenticated] = useState(false);
+  const navigate = useNavigate(); 
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -24,13 +21,13 @@ function UserAuth() {
   };
 
   if (authenticated) {
-    return <App username={username} socket={socket} />;
-  }
+    navigate(`/chat/${username}`);
+   }
 
   return (
     <div className="App">
       <h2>Chat App - Login</h2>
-      <form id="form" onSubmit={handleSubmit}>
+      <form id="form" onSubmit={handleSubmit} className="form">
         <input
           type="text"
           id="username"
