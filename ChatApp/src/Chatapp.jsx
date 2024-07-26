@@ -14,6 +14,7 @@ function Chatapp() {
         <Route path="/" element={<UserAuth socket={socket} />} />
         <Route path="/chat/:username" element={<App  socket={socket} />} />
         <Route path="/chat/:username/:recipient" element={<ChatArea  socket={socket} />} />
+        <Route path="/chat/:username/room/:roomName" element={<ChatArea  socket={socket} />} />
       </Routes>
     </BrowserRouter>
   )
