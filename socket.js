@@ -1,6 +1,7 @@
 const http = require('http');
 const socketio = require('socket.io');
 
+
 const port = 3000;
 const server = http.createServer();
 const io = socketio(server, {
@@ -8,6 +9,7 @@ const io = socketio(server, {
     origin: '*',
   },
 });
+
 
 const rooms = {};
 const users = [];
@@ -28,6 +30,7 @@ io.on('connection', (socket) => {
         userID: socket.id,
         username: data.username,
       });
+      users1.insertOne(data);
       console.log('users', users);
     } else {
       socket.emit('error', 'Username is required');
