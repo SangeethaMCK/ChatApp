@@ -3,20 +3,27 @@ import './App.css';
 import { useParams } from 'react-router';
 
 function ChatArea({ socket }) {
+  const [users, setUsers] = useState([]);
   const { username, recipient, roomName } = useParams();
   const [input, setInput] = useState('');
   const [messages, setMessages] = useState([]);
   const [friend, setFriend] = useState('');
 
   useEffect(() => {
+    socket.emit('get_users');
+    socket.on('update_users', (users) => {
+      setUsers(users);
+    });
     // Join room if specified
     if (roomName) {
       socket.emit('join_room', roomName);
     }
 
     socket.on('private_message', (data) => {
+      if(data.to === username && data.from === recipient) {
       setMessages((prevMessages) => [...prevMessages, { text: data.content, type: 'received'}]);
-    });
+    }  });
+  
 
     socket.on('room_message', ({ content, from }) => {
       setMessages((prevMessages) => [...prevMessages, { text: content, type: 'received', from }]);
@@ -44,8 +51,8 @@ function ChatArea({ socket }) {
   };
 
   const handleAddFriend = (e) => {
-    let friendUsername = friend.trim();
     e.preventDefault();
+    let friendUsername = friend.trim();
     if (friendUsername) {
       socket.emit('add_friend', { roomName, friendUsername });
       setFriend('');
@@ -69,6 +76,17 @@ function ChatArea({ socket }) {
             />
             <button type="submit">Add</button>
           </form>
+          {/* <div className='dropdown'>
+          <button> Add Friend </button>
+          <div className='dropdown-content'>
+            {users && users.map((user, index) => (
+              <div key={index} onClick={() => {setFriend(user), handleAddFriend(user)}}>
+                {user}
+              </div>
+            ))}
+            
+        </div>
+        </div> */}
         </div>
       )}
 

@@ -1,7 +1,7 @@
 const http = require('http');
 const socketio = require('socket.io');
 
-const port = 3001;
+const port = 3000;
 const server = http.createServer();
 const io = socketio(server, {
   cors: {
@@ -45,7 +45,7 @@ io.on('connection', (socket) => {
 
     const recipient = users.find((user) => user.username === to);
     if (recipient) {
-      socket.to(recipient.userID).emit('private_message', { content, from });
+      socket.to(recipient.userID).emit('private_message', { content, from, to });
     } else {
       socket.emit('error', 'User not found');
     }
@@ -88,9 +88,11 @@ io.on('connection', (socket) => {
     console.log('get_rooms', username);
     const socketName = users.find((user) => user.username === username);
     console.log('socketName', socketName);
+    if (socketName) {
     const socketid = socketName.userID;
     const roomsWithUser = Object.keys(rooms).filter(roomName => rooms[roomName].includes(socketid));
     io.to(socketid).emit('update_roomList', roomsWithUser);
+    }
   });
 
   socket.on('add_friend', ({ roomName, friendUsername }) => {
