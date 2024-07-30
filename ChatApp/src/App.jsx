@@ -15,21 +15,31 @@ function App({ socket }) {
     // Request initial data
     socket.emit('get_users');
     socket.emit('get_rooms', username);
-
-    socket.emit('join_room', rooms.forEach(room => room.name));
-
+  
+    // Join rooms once rooms data is fetched
+    socket.on('update_roomList', (roomList) => {
+      setRooms(roomList);
+      roomList.forEach(room => {
+        socket.emit('join_room', room);
+      });
+    });
+  
     // Handle updates to user list
     socket.on('update_users', (userList) => {
       console.log('update_users', userList);
-      setUsers(userList.map(user => user.username));
+      setUsers(userList.map(user => ({
+        username: user.username,
+        connection: user.connection
+      })));
     });
-
+  
     // Cleanup on unmount
     return () => {
-      socket.off('message');
       socket.off('update_users');
+      socket.off('update_roomList');
     };
-  }, [socket]);
+  }, [socket, username]);
+  
 
   const handleUserClick = (user) => {
     setRecipient(user);
@@ -42,16 +52,17 @@ function App({ socket }) {
   const handleRoomSubmit = (e) => {
     e.preventDefault();
     if (room.trim()) {
-      socket.emit('create_room', room);
+      socket.emit('create_room', room, username);
       socket.emit('get_rooms', username);
       setRoom('');
     }
   };
 
-  socket.on('update_roomList', (room) => {
-    console.log('update_room', room);
-    setRooms(room);
+  socket.on('update_roomList', (roomList) => {
+    console.log('update_room', roomList);
+    setRooms(roomList);
   });
+
   // Navigate to chat with the recipient if selected
   useEffect(() => {
     if (recipient) {
@@ -66,9 +77,15 @@ function App({ socket }) {
         <h3>Users:</h3>
         <div className='users'>
           {users.map((user, index) => (
-            user !== username && (
-              <div key={index} onClick={() => handleUserClick(user)}>
-                {user}
+            user.username !== username && (
+              <div 
+                key={index} 
+                onClick={() => handleUserClick(user.username)}
+                className='userName'
+                style={{
+                  color: user.connection ? 'green' : 'red'}}
+              >
+                {user.username}
               </div>
             )
           ))}
@@ -90,7 +107,11 @@ function App({ socket }) {
         </form>
         <div className='rooms'>
           {rooms.map((room, index) => (
-            <div key={index} onClick={() => handleRoomClick(room)}>
+            <div 
+              key={index} 
+              onClick={() => handleRoomClick(room)}
+              className='roomName'
+            >
               {room}
             </div>
           ))}

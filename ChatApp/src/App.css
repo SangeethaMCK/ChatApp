@@ -29,3 +29,11 @@
   background-color: #f1f0f0; 
   margin-right: 90%;
 }
+
+.userName , .roomName{
+  cursor: pointer;
+  padding: 5px;
+  border: 1px solid #ccc;
+  margin: 5px;
+  border-radius: 4px;
+}
