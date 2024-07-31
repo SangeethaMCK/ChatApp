@@ -10,49 +10,86 @@ function ChatArea({ socket }) {
   const [friend, setFriend] = useState('');
 
   useEffect(() => {
+    const handleUpdateUsers = (users) => setUsers(users);
+    const handleUpdateRooms = (rooms) => setRooms(rooms);
+    const handleMessages = (messages) => {
+      setMessages(messages.map(msg => ({
+        text: msg.message,
+        type: msg.user === username ? 'sent' : 'received',
+        // from: msg.user === username ? null : msg.user
+      })));
+    };
+    const handleRoomMessages = (messages) => {
+      setMessages(messages.map(msg => ({
+        text: msg.message,
+        type: msg.user === username ? 'sent' : 'received',
+        from: msg.user === username ? null : msg.user
+      })));
+    };
+    const handlePrivateMessage = (data) => {
+      if (data.to === username && data.from === recipient) {
+        setMessages(prevMessages => [...prevMessages, {
+           text: data.content,
+            type: 'received' 
+          }]);
+      }
+    };
+    const handleRoomMessage = (data) => {
+      console.log("handleRoomMessage", data);
+      if (data.roomName === roomName) {
+        setMessages(prevMessages => [...prevMessages, {
+           text: data.content, 
+           type: data.from === username ? 'sent' : 'received', 
+           from: data.from 
+          }]);
+      }
+    };
+
+    // Fetch users and messages
     socket.emit('get_users');
-    socket.on('update_users', (users) => {
-      setUsers(users);
-    });
-    // Join room if specified
-    if (roomName) {
-      socket.emit('join_room', roomName);
+    socket.emit('get_rooms');
+    socket.on('update_users', handleUpdateUsers);
+    socket.on('update_rooms', handleUpdateRooms);
+
+    if (recipient) {
+      socket.emit('get_msgs', { to: recipient, from: username });
+      socket.on('messages', handleMessages);
     }
 
-    socket.on('private_message', (data) => {
-      if(data.to === username && data.from === recipient) {
-      setMessages((prevMessages) => [...prevMessages, { text: data.content, type: 'received'}]);
-    }  });
-  
+    if (roomName) {
+      socket.emit('join_room', roomName);
+      socket.emit('get_roomMsgs', { roomName, username });
+      socket.on('room_messages', handleRoomMessages);
+    }
 
-    socket.on('room_message', ({ content, from }) => {
-      setMessages((prevMessages) => [...prevMessages, { text: content, type: 'received', from }]);
-    });
+    socket.on('pvt_message', handlePrivateMessage);
+    socket.on('room_message', handleRoomMessage);
 
-    // Cleanup on unmount
     return () => {
-      socket.off('private_message');
-      socket.off('room_message');
+      socket.off('update_users', handleUpdateUsers);
+      socket.off('messages', handleMessages);
+      socket.off('room_messages', handleRoomMessages);
+      socket.off('pvt_message', handlePrivateMessage);
+      socket.off('room_message', handleRoomMessage);
     };
-  }, [socket, roomName]);
+  }, [socket, recipient, roomName, username]);
 
   const handleSubmit = (e) => {
     e.preventDefault();
     if (input.trim()) {
-      console.log('recipient', recipient, 'roomName', roomName, 'username', username);
       if (recipient) {
         socket.emit('private_message', { content: input, to: recipient, from: username });
       } else if (roomName) {
         socket.emit('room_message', { content: input, roomName, from: username });
-      } 
-      setMessages((prevMessages) => [...prevMessages, { text: input, type: 'sent' }]);
+      }
+      setMessages(prevMessages => [...prevMessages, { text: input, type: 'sent' }]);
       setInput('');
     }
   };
 
   const handleAddFriend = (e) => {
     e.preventDefault();
-    let friendUsername = friend.trim();
+    const friendUsername = friend.trim();
     if (friendUsername) {
       socket.emit('add_friend', { roomName, friendUsername });
       setFriend('');
@@ -62,7 +99,7 @@ function ChatArea({ socket }) {
   return (
     <div className="ChatArea">
       <h2>{username} - Chat with {recipient || `room ${roomName}`}</h2>
-      
+
       {roomName && (
         <div className='addFriend'>
           <h3>Add a friend:</h3>
@@ -76,17 +113,6 @@ function ChatArea({ socket }) {
             />
             <button type="submit">Add</button>
           </form>
-          {/* <div className='dropdown'>
-          <button> Add Friend </button>
-          <div className='dropdown-content'>
-            {users && users.map((user, index) => (
-              <div key={index} onClick={() => {setFriend(user), handleAddFriend(user)}}>
-                {user}
-              </div>
-            ))}
-            
-        </div>
-        </div> */}
         </div>
       )}
 
@@ -103,9 +129,10 @@ function ChatArea({ socket }) {
 
       <div id="messages">
         {messages.map((msg, index) => (
-          <p key={index} className={`message ${msg.type}`}>
-            {msg.from ? `${msg.from}: ` : ''}{msg.text}
-          </p>
+          <span key={index} className={`message ${msg.type}`}>
+            <b>{msg.from ? `${msg.from}: ` : ''}</b>
+            {msg.text}
+          </span>
         ))}
       </div>
     </div>

@@ -3,6 +3,8 @@
   position: fixed;
 }
 #messages {
+  display: flex;
+  flex-direction: column; 
   position: relative;
   max-width: 600px;
   margin: 20px auto;
@@ -12,6 +14,7 @@
   height: 400px;
   overflow-y: auto;
 }
+
 .message {
   padding: 5px 10px;
   margin: 5px 0;
@@ -19,15 +22,16 @@
   width: fit-content;
   max-width: 80%;
   word-wrap: break-word;
+  align-items: center; 
 }
 .sent {
   background-color: #e1ffc7;
-  margin-left:90%;
+  align-self: flex-end;
  
 }
 .received {
   background-color: #f1f0f0; 
-  margin-right: 90%;
+  align-self: flex-start;
 }
 
 .userName , .roomName{
