@@ -7,6 +7,7 @@ function App({ socket }) {
   const [recipient, setRecipient] = useState(null);
   const [room, setRoom] = useState("");
   const [rooms, setRooms] = useState([]);
+  const [showUsers, setShowUsers] = useState(true);
   const { username } = useParams();
   const navigate = useNavigate();
 
@@ -26,12 +27,10 @@ function App({ socket }) {
 
     // Handle updates to room list
     const handleUpdateRoomList = (roomList) => {
-      console.log("update_roomList", roomList);
       roomList.forEach(room => {
         socket.emit("join_room", room);
       });
       setRooms(roomList);
-      
     };
 
     // Register event listeners
@@ -67,52 +66,58 @@ function App({ socket }) {
     }
   };
 
-
   return (
     <div className="App">
-      <h2>Chat App - {username}</h2>
+      <h2 className="heading">CHATTER-BOX</h2>
+      <span className="username">
+        {username.charAt(0).toUpperCase()}
+        <div className="username-text">{username}</div>
+      </span>
       <div>
-        <h3>Users:</h3>
-        <div className="users">
-          {users.map((user, index) => (
-            user.username !== username && (
-              <div
-                key={index}
-                onClick={() => handleUserClick(user.username)}
-                className="userName"
-                style={{ color: user.connection ? "green" : "red" }}
-              >
-                {user.username}
-              </div>
-            )
-          ))}
+        <div className="pagination">
+          <span className="usersPge" onClick={() => setShowUsers(true)}>Users</span>
+          <span className="roomsPge" onClick={() => setShowUsers(false)}>Rooms</span>
         </div>
-      </div>
-
-      {/* Rooms List */}
-      <div className="rooms">
-        <h3>Rooms:</h3>
-        <form id="form" onSubmit={handleRoomSubmit}>
-          <input
-            type="text"
-            id="input"
-            placeholder="Enter room name here..."
-            value={room}
-            onChange={(e) => setRoom(e.target.value)}
-          />
-          <button type="submit">Create</button>
-        </form>
-        <div className="roomsList">
-          {rooms.map((room, index) => (
-            <div
-              key={index}
-              onClick={() => handleRoomClick(room)}
-              className="roomName"
-            >
-              {room}
+        {showUsers ? (
+          <div className="users">
+            {users.map((user, index) => (
+              user.username !== username && (
+                <div
+                  key={index}
+                  onClick={() => handleUserClick(user.username)}
+                  className="userName"
+                  style={{ color: user.connection ? "green" : "red" }}
+                >
+                  {user.username}
+                </div>
+              )
+            ))}
+          </div>
+        ) : (
+          <div className="rooms">
+            <form id="form" onSubmit={handleRoomSubmit}>
+              <input
+                type="text"
+                id="input"
+                placeholder="Enter room name here..."
+                value={room}
+                onChange={(e) => setRoom(e.target.value)}
+              />
+              <button type="submit">Create</button>
+            </form>
+            <div className="roomsList">
+              {rooms.map((room, index) => (
+                <div
+                  key={index}
+                  onClick={() => handleRoomClick(room)}
+                  className="roomName"
+                >
+                  {room}
+                </div>
+              ))}
             </div>
-          ))}
-        </div>
+          </div>
+        )}
       </div>
     </div>
   );

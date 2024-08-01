@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import './App.css';
 import { useParams } from 'react-router';
+import './ChatArea.css';
 
 function ChatArea({ socket }) {
   const [users, setUsers] = useState([]);
@@ -98,11 +98,11 @@ function ChatArea({ socket }) {
 
   return (
     <div className="ChatArea">
-      <h2>{username} - Chat with {recipient || `room ${roomName}`}</h2>
+      <h2 className="heading"> {recipient || ` ${roomName}`}</h2>
 
       {roomName && (
         <div className='addFriend'>
-          <h3>Add a friend:</h3>
+          <h3 className='heading addFriend'>Add a friend:</h3>
           <form id="addFriendForm" onSubmit={handleAddFriend}>
             <input
               type="text"
@@ -116,17 +116,6 @@ function ChatArea({ socket }) {
         </div>
       )}
 
-      <form id="messageForm" onSubmit={handleSubmit}>
-        <input
-          type="text"
-          id="messageInput"
-          placeholder="Enter your message here..."
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-        />
-        <button type="submit">Send</button>
-      </form>
-
       <div id="messages">
         {messages.map((msg, index) => (
           <span key={index} className={`message ${msg.type}`}>
@@ -135,6 +124,17 @@ function ChatArea({ socket }) {
           </span>
         ))}
       </div>
+
+      <form id="messageForm" onSubmit={handleSubmit}>
+        <input
+          type="text"
+          id="messageInput"
+          placeholder="Enter your message here..."
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+        />
+        <button type="submit" className='sendBtn'>Send</button>
+      </form>
     </div>
   );
 }

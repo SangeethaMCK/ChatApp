@@ -1,43 +1,148 @@
-.form {
-  display: flex;
-  position: fixed;
-}
-#messages {
-  display: flex;
-  flex-direction: column; 
-  position: relative;
+
+
+.App {
+  width: 90%;
   max-width: 600px;
-  margin: 20px auto;
+  height: 90%;
+  border: 1px solid #dcdcdc;
+  border-radius: 10px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  background-color: #2a2a2a;
+  position: relative; 
+}
+
+.heading {
+  text-align: center;
+  color: #ffffff;
+  margin-bottom: 20px;
+  margin-top: 5px;
+}
+
+.username {
+  background-color: #ffffff;
+  border-radius: 50%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  width: 40px;
+  height: 40px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.username-text {
+  font-size: 14px;
+  display: none;
+  position: absolute;
+  bottom: -35px;
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: #ffffff;
+  padding: 5px 10px;
+  border-radius: 4px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.username:hover .username-text {
+  display: block;
+}
+
+.pagination {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 20px;
+}
+
+.pagination span {
+  cursor: pointer;
+  padding: 10px 15px;
+  margin: 0px 10px;
+  border-radius: 5px;
+  background-color: #ffffff;
+  color: #333333;
+  font-weight: bold;
+  transition: background-color 0.3s;
+}
+
+.pagination span:hover {
+  background-color: #e0e0e0;
+}
+
+.users, .rooms {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+
+
+.userName, .roomName {
+  cursor: pointer;
   padding: 10px;
   border: 1px solid #ccc;
+  margin: 5px 0;
+  border-radius: 4px;
+  background-color: #ffffff;
+  transition: background-color 0.3s;
+}
+
+.userName:hover, .roomName:hover {
+  background-color: #f0f0f0;
+}
+
+#form {
+  display: inline-flex;
+  flex-direction: row;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+button {
+  padding: 10px 15px;
+  border: none;
+  border-radius: 4px;
+  background-color: #007bff;
+  color: #ffffff;
+  cursor: pointer;
+  transition: background-color 0.3s;
+  width: 30%;
+  font-size: medium;
+}
+
+button:hover {
+  background-color: #0056b3;
+}
+
+#messages {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  margin: 20px 0;
+  padding: 10px;
+  border: 1px solid #ddd;
   border-radius: 5px;
-  height: 400px;
+  background-color: #ffffff;
   overflow-y: auto;
 }
 
 .message {
-  padding: 5px 10px;
+  padding: 10px;
   margin: 5px 0;
   border-radius: 5px;
-  width: fit-content;
   max-width: 80%;
   word-wrap: break-word;
-  align-items: center; 
+  align-items: center;
 }
+
 .sent {
   background-color: #e1ffc7;
   align-self: flex-end;
- 
-}
-.received {
-  background-color: #f1f0f0; 
-  align-self: flex-start;
 }
 
-.userName , .roomName{
-  cursor: pointer;
-  padding: 5px;
-  border: 1px solid #ccc;
-  margin: 5px;
-  border-radius: 4px;
+.received {
+  background-color: #f1f0f0;
+  align-self: flex-start;
 }

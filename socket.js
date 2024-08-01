@@ -161,7 +161,7 @@ io.on("connection", (socket) => {
       if (user) {
         const userRooms = await RoomModel.find({ users: user.socketid });
         const roomNames = userRooms.map((room) => room.name);
-        console.log(roomNames);
+        // console.log(roomNames);
         socket.emit("update_roomList", roomNames);
       }
     } catch (err) {

@@ -1,10 +1,6 @@
 import React, { useState } from 'react';
-
-import io from 'socket.io-client';
-import App from './App';
-import './App.css';
-import { Link } from 'react-router-dom'
 import { useNavigate } from 'react-router-dom';
+import './UserAuth.css';
 
 function UserAuth({ socket }) {
   const [username, setUsernameInput] = useState('');
@@ -25,9 +21,9 @@ function UserAuth({ socket }) {
    }
 
   return (
-    <div className="App">
-      <h2>Chat App - Login</h2>
-      <form id="form" onSubmit={handleSubmit} className="form">
+    <div className="UserAuth">
+      <h2 className="heading">CHATTER-BOX</h2>
+      <form id="loginForm" onSubmit={handleSubmit} className="form">
         <input
           type="text"
           id="username"
@@ -42,7 +38,7 @@ function UserAuth({ socket }) {
           value={password}
           onChange={(e) => setPassword(e.target.value)}
         />
-        <button type="submit">Login</button>
+        <button type="submit" className="loginButton">Login</button>
       </form>
     </div>
   );
