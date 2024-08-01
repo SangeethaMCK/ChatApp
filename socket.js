@@ -15,6 +15,7 @@ const UserSchema = new mongoose.Schema({
   username: { type: String, required: true },
   password: String,
   socketid: { type: String, unique: true },
+  email: String,
   connection: { type: Boolean, default: false },
 });
 
@@ -57,29 +58,56 @@ const updateRooms = async () => (rooms = await RoomModel.find());
 io.on("connection", (socket) => {
   console.log("A user connected");
 
+  socket.on("signup", async (data) => {
+    try{
+      let user = await UserModel.findOne({ username: data.username });
+      if (user) {
+        socket.emit("error", "Username already exists");
+      } else {
+        user = new UserModel({
+          username: data.username,
+          socketid: socket.id,
+          password: data.password,
+          email: data.email,
+          connection: false,
+        });
+
+        await user.save();
+        socket.emit("signup_success");
+      }
+      await updateUsers();
+    }
+    catch(err){
+      socket.emit("error", "Error saving user to database");
+    }
+  });
+
   socket.on("login", async (data) => {
-    if (data.username) {
+    if (data.username && data.password) {
       try {
         let user = await UserModel.findOne({ username: data.username });
         if (user) {
-          user.connection = true;
-          await user.save();
+          if (user.password === data.password) {
+            if(!user.connection){
+            user.connection = true;
+            await user.save();
+            socket.username = data.username;
+            await updateUsers();
+            socket.emit("login_success");
+          } else{
+            socket.emit("error","User already logged in");
+          }}
+            else {
+            socket.emit("error", "Incorrect password");
+          }
         } else {
-          user = new UserModel({
-            username: data.username,
-            socketid: socket.id,
-            password: data.password,
-            connection: true,
-          });
-          await user.save();
+          socket.emit("error", "Username not found");
         }
-        socket.username = data.username;
-        await updateUsers();
       } catch (err) {
         socket.emit("error", "Error saving user to database");
       }
     } else {
-      socket.emit("error", "Username is required");
+      socket.emit("error", "All fields are required");
     }
   });
 
@@ -129,7 +157,7 @@ io.on("connection", (socket) => {
         await user.save();
       }
       await updateUsers();
-      io.emit("update_users", users);
+      io.emit("update_users", users.map(user => user.username));
     } catch (err) {
       socket.emit("error", "Error updating user on disconnect");
     }
@@ -139,6 +167,7 @@ io.on("connection", (socket) => {
     try {
       let room = await RoomModel.findOne({ name: roomName });
       if (room) {
+        console.log("Room already exists");
         socket.emit("error", "Room already exists");
       } else {
         const user = await UserModel.findOne({ username });
@@ -206,6 +235,12 @@ io.on("connection", (socket) => {
     try {
       const messages = await MessageModel.find({ room: roomName });
       socket.emit("room_messages", messages);
+      const roomDetails = await RoomModel.findOne({ name: roomName });
+      const roomMembersIds = roomDetails.users;
+      const roomMembersDetails = await UserModel.find({ socketid: { $in: roomMembersIds } });
+      const roomMembers = roomMembersDetails.map((user) => user.username);
+      // console.log("roomMembers", roomMembers);
+      socket.emit("room_members", roomMembersDetails);
     } catch (err) {
       socket.emit("error", "Error fetching room messages");
     }

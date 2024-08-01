@@ -21,7 +21,7 @@
 }
 
 .username {
-  background-color: #ffffff;
+  background-color: #ffffff5d;
   border-radius: 50%;
   display: flex;
   justify-content: center;
@@ -57,19 +57,22 @@
   margin-bottom: 20px;
 }
 
-.pagination span {
+.pagination-item {
   cursor: pointer;
   padding: 10px 15px;
-  margin: 0px 10px;
   border-radius: 5px;
-  background-color: #ffffff;
-  color: #333333;
+  color: #aca7a7;
   font-weight: bold;
   transition: background-color 0.3s;
+  margin: 0px 10px;
 }
 
-.pagination span:hover {
+.pagination-item.active {
   background-color: #e0e0e0;
+}
+
+.pagination-item:hover {
+  background-color: #f0f0f0;
 }
 
 .users, .rooms {

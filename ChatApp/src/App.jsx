@@ -8,15 +8,18 @@ function App({ socket }) {
   const [room, setRoom] = useState("");
   const [rooms, setRooms] = useState([]);
   const [showUsers, setShowUsers] = useState(true);
+  const [error, setError] = useState("");
   const { username } = useParams();
   const navigate = useNavigate();
 
+  socket.on("error", (err) => {
+    setError(err);
+  });
+
   useEffect(() => {
-    // Request initial data
     socket.emit("get_users");
     socket.emit("get_rooms", username);
 
-    // Handle updates to user list
     const handleUpdateUsers = (userList) => {
       console.log("update_users", userList);
       setUsers(userList.map(user => ({
@@ -25,7 +28,6 @@ function App({ socket }) {
       })));
     };
 
-    // Handle updates to room list
     const handleUpdateRoomList = (roomList) => {
       roomList.forEach(room => {
         socket.emit("join_room", room);
@@ -33,11 +35,9 @@ function App({ socket }) {
       setRooms(roomList);
     };
 
-    // Register event listeners
     socket.on("update_users", handleUpdateUsers);
     socket.on("update_roomList", handleUpdateRoomList);
 
-    // Cleanup on unmount
     return () => {
       socket.off("update_users", handleUpdateUsers);
       socket.off("update_roomList", handleUpdateRoomList);
@@ -49,6 +49,8 @@ function App({ socket }) {
       navigate(`/chat/${username}/${recipient}`);
     }
   }, [recipient, navigate, username]);
+
+ 
 
   const handleUserClick = (user) => {
     setRecipient(user);
@@ -63,21 +65,35 @@ function App({ socket }) {
     if (room.trim()) {
       socket.emit("create_room", room, username);
       setRoom("");
+      setError("");
     }
   };
+
 
   return (
     <div className="App">
       <h2 className="heading">CHATTER-BOX</h2>
+      
       <span className="username">
         {username.charAt(0).toUpperCase()}
         <div className="username-text">{username}</div>
       </span>
       <div>
         <div className="pagination">
-          <span className="usersPge" onClick={() => setShowUsers(true)}>Users</span>
-          <span className="roomsPge" onClick={() => setShowUsers(false)}>Rooms</span>
+          <span 
+            className={`pagination-item ${showUsers ? 'active' : ''}`} 
+            onClick={() => setShowUsers(true)}
+          >
+            Users
+          </span>
+          <span 
+            className={`pagination-item ${!showUsers ? 'active' : ''}`} 
+            onClick={() => setShowUsers(false)}
+          >
+            Rooms
+          </span>
         </div>
+        {error && <p className="error">{error}</p>}
         {showUsers ? (
           <div className="users">
             {users.map((user, index) => (

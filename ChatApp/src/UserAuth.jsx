@@ -1,24 +1,26 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import './UserAuth.css';
+import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import "./UserAuth.css";
 
 function UserAuth({ socket }) {
-  const [username, setUsernameInput] = useState('');
-  const [password, setPassword] = useState('');
-  const [authenticated, setAuthenticated] = useState(false);
-  const navigate = useNavigate(); 
+  const [username, setUsernameInput] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+  const navigate = useNavigate();
 
   const handleSubmit = (e) => {
     e.preventDefault();
     if (username.trim() && password.trim()) {
-      socket.emit('login', { username, password });
-      setAuthenticated(true); 
+      socket.emit("login", { username, password });
+      socket.on("login_success", () => {
+        navigate(`/chat/${username}`);
+      });
     }
   };
 
-  if (authenticated) {
-    navigate(`/chat/${username}`);
-   }
+  socket.on("error", (err) => {
+    setError(err);
+  });
 
   return (
     <div className="UserAuth">
@@ -38,7 +40,15 @@ function UserAuth({ socket }) {
           value={password}
           onChange={(e) => setPassword(e.target.value)}
         />
-        <button type="submit" className="loginButton">Login</button>
+        {error && <p className="error">{error}</p>}
+        <div className="loginButtons">
+          <button type="submit" className="loginButton">
+            Login
+          </button>
+          <button className="signUpButton" onClick={() => navigate("/signup")}>
+            Sign Up
+          </button>
+        </div>
       </form>
     </div>
   );
