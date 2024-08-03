@@ -3,7 +3,7 @@ const socketio = require("socket.io");
 const express = require("express");
 const mongoose = require("mongoose");
 
-const port = 3003;
+const port = 3001;
 const app = express();
 const server = http.createServer(app);
 const io = socketio(server, {
@@ -37,8 +37,7 @@ const RoomModel = mongoose.model("Room", RoomSchema);
 const MessageModel = mongoose.model("Message", MessageSchema);
 
 // MongoDB connection
-mongoose
-  .connect("mongodb://localhost:27017/ChatApp")
+mongoose.connect("mongodb://localhost:27017/ChatApp")
   .then(() => console.log("Connected to MongoDB"))
   .catch((err) => console.error("Failed to connect to MongoDB", err));
 
@@ -46,21 +45,18 @@ server.listen(port, () => {
   console.log(`Socket.io server is listening on port ${port}`);
 });
 
-// Variables
-let rooms = [];
-let users = [];
-
-// Update functions
-const updateUsers = async () => (users = await UserModel.find());
-const updateRooms = async () => (rooms = await RoomModel.find());
+// Helper functions
+const updateUsers = async () => UserModel.find();
+const updateRooms = async () => RoomModel.find();
 
 // Socket.IO connection handling
 io.on("connection", (socket) => {
   console.log("A user connected");
 
   socket.on("signup", async (data) => {
-    try{
+    try {
       let user = await UserModel.findOne({ username: data.username });
+      console.log("username:",data.username);
       if (user) {
         socket.emit("error", "Username already exists");
       } else {
@@ -71,49 +67,42 @@ io.on("connection", (socket) => {
           email: data.email,
           connection: false,
         });
-
         await user.save();
         socket.emit("signup_success");
       }
-      await updateUsers();
-    }
-    catch(err){
+      io.emit("update_users", await updateUsers());
+    } catch (err) {
       socket.emit("error", "Error saving user to database");
     }
   });
 
   socket.on("login", async (data) => {
-    if (data.username && data.password) {
-      try {
-        let user = await UserModel.findOne({ username: data.username });
-        if (user) {
-          if (user.password === data.password) {
-            if(!user.connection){
+    try {
+      const user = await UserModel.findOne({ username: data.username });
+      if (user) {
+        if (user.password === data.password) {
+          if (!user.connection) {
             user.connection = true;
             await user.save();
             socket.username = data.username;
-            await updateUsers();
+            io.emit("update_users", await updateUsers());
             socket.emit("login_success");
-          } else{
-            socket.emit("error","User already logged in");
-          }}
-            else {
-            socket.emit("error", "Incorrect password");
+          } else {
+            socket.emit("error", "User already logged in");
           }
         } else {
-          socket.emit("error", "Username not found");
+          socket.emit("error", "Incorrect password");
         }
-      } catch (err) {
-        socket.emit("error", "Error saving user to database");
+      } else {
+        socket.emit("error", "Username not found");
       }
-    } else {
-      socket.emit("error", "All fields are required");
+    } catch (err) {
+      socket.emit("error", "Error saving user to database");
     }
   });
 
   socket.on("get_users", async () => {
-    await updateUsers();
-    io.emit("update_users", users);
+    io.emit("update_users", await updateUsers());
   });
 
   socket.on("get_msgs", async ({ to, from }) => {
@@ -124,6 +113,7 @@ io.on("connection", (socket) => {
           { $and: [{ user: to }, { recipient: from }] },
         ],
       });
+      console.log(messages.map(m => m._id));
       socket.emit("messages", messages);
     } catch (err) {
       socket.emit("error", "Error fetching private messages");
@@ -132,13 +122,12 @@ io.on("connection", (socket) => {
 
   socket.on("private_message", async ({ content, to, from }) => {
     try {
-      const recipient = users.find((user) => user.username === to);
+      const recipient = await UserModel.findOne({ username: to });
       if (recipient) {
         await MessageModel.create({
           message: content,
           user: from,
           recipient: to,
-          room: null,
         });
         io.emit("pvt_message", { content, from, to });
       } else {
@@ -149,35 +138,16 @@ io.on("connection", (socket) => {
     }
   });
 
-  socket.on("disconnect", async () => {
-    try {
-      const user = await UserModel.findOne({ username: socket.username });
-      if (user) {
-        user.connection = false;
-        await user.save();
-      }
-      await updateUsers();
-      io.emit("update_users", users.map(user => user.username));
-    } catch (err) {
-      socket.emit("error", "Error updating user on disconnect");
-    }
-  });
-
   socket.on("create_room", async (roomName, username) => {
     try {
       let room = await RoomModel.findOne({ name: roomName });
       if (room) {
-        console.log("Room already exists");
         socket.emit("error", "Room already exists");
       } else {
         const user = await UserModel.findOne({ username });
         room = new RoomModel({ name: roomName, users: [user.socketid] });
         await room.save();
-        console.log("New room created", room);
-        await updateRooms();
-        const userRooms = await RoomModel.find({ users: user.socketid });
-        const roomNames = userRooms.map((room) => room.name);
-        socket.emit("update_roomList", roomNames);
+        io.emit("update_roomList", (await updateRooms()).map(r => r.name));
       }
     } catch (err) {
       socket.emit("error", "Error creating room");
@@ -189,9 +159,7 @@ io.on("connection", (socket) => {
       const user = await UserModel.findOne({ username });
       if (user) {
         const userRooms = await RoomModel.find({ users: user.socketid });
-        const roomNames = userRooms.map((room) => room.name);
-        // console.log(roomNames);
-        socket.emit("update_roomList", roomNames);
+        socket.emit("update_roomList", userRooms.map(room => room.name));
       }
     } catch (err) {
       socket.emit("error", "Error fetching rooms");
@@ -201,21 +169,14 @@ io.on("connection", (socket) => {
   socket.on("add_friend", async ({ roomName, friendUsername }) => {
     try {
       const friend = await UserModel.findOne({ username: friendUsername });
-      const friendSocketId = friend.socketid;
       if (friend) {
         const room = await RoomModel.findOne({ name: roomName });
-        if (room && !room.users.includes(friendSocketId)) {
+        if (room && !room.users.includes(friend.socketid)) {
           room.users.push(friend.socketid);
           await room.save();
-          const roomsWithUser = await RoomModel.find({
-            users: friendSocketId,
-          });
-          const roomsWithUserNames = roomsWithUser.map((room) => room.name);
-          console.log("roomsWithUserNames", roomsWithUserNames);
-          io.to(friendSocketId).emit(
-            "update_roomList",
-            roomsWithUserNames
-          );
+          io.emit("update_roomList", (await updateRooms()).map(r => r.name));
+          roomMembers = await UserModel.find({ socketid: { $in: room.users } });
+         socket.emit("room_members", room.users);
         } else {
           socket.emit("error", "Room does not exist or user already in room");
         }
@@ -235,12 +196,12 @@ io.on("connection", (socket) => {
     try {
       const messages = await MessageModel.find({ room: roomName });
       socket.emit("room_messages", messages);
+
       const roomDetails = await RoomModel.findOne({ name: roomName });
       const roomMembersIds = roomDetails.users;
       const roomMembersDetails = await UserModel.find({ socketid: { $in: roomMembersIds } });
-      const roomMembers = roomMembersDetails.map((user) => user.username);
-      // console.log("roomMembers", roomMembers);
-      socket.emit("room_members", roomMembersDetails);
+      const roomMembers = roomMembersDetails.map(user => user.username);
+      socket.emit("room_members", roomMembers);
     } catch (err) {
       socket.emit("error", "Error fetching room messages");
     }
@@ -251,12 +212,30 @@ io.on("connection", (socket) => {
       await MessageModel.create({
         message: content,
         user: from,
-        recipient: null,
         room: roomName,
       });
       socket.to(roomName).emit("room_message", { content, from, roomName });
     } catch (err) {
       socket.emit("error", "Error saving room message");
+    }
+  });
+
+// socket.on("new_msg", async (id, username, recipient) => {
+//   socket.emit("new_msg", id, username, recipient);
+// })
+
+
+
+  socket.on("disconnect", async () => {
+    try {
+      const user = await UserModel.findOne({ username: socket.username });
+      if (user) {
+        user.connection = false;
+        await user.save();
+        io.emit("update_users", await updateUsers());
+      }
+    } catch (err) {
+      console.error("Error updating user on disconnect", err);
     }
   });
 });

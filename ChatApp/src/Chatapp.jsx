@@ -6,7 +6,7 @@ import SignUp from './Signup.jsx'
 
 import io from 'socket.io-client';
 
-const socket = io('http://localhost:3003');
+const socket = io('http://192.168.0.115:3001');
 
 function Chatapp() {
   return (
