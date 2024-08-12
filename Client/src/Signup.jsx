@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import './SignUp.css';
+import './styles/SignUp.css';
 
 function Signup({ socket }) {
   const [username, setUsername] = useState('');
@@ -23,6 +23,7 @@ function Signup({ socket }) {
       else {
         socket.emit('signup', { username, password, email });
         socket.on('signup_success', () => {
+          console.log(`${username} has signed up`);
         setError('');
         navigate('/');
         });
@@ -31,7 +32,7 @@ function Signup({ socket }) {
     else{
         setError('Please fill all the fields');
     }
-  };
+  }
   return (
     <div className="Signup">
       <h2 className="heading">CHATTER-BOX</h2>

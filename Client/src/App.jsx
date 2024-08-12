@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import "./App.css";
+import "./styles/App.css";
 
 function App({ socket }) {
   const [users, setUsers] = useState([]);
@@ -13,10 +13,41 @@ function App({ socket }) {
   const { username } = useParams();
   const navigate = useNavigate();
 
+document.addEventListener("DOMContentLoaded", async () => {
+    async function fetchCookie() {
+      try {
+        const response = await fetch("http://localhost:3000/get-cookie", {
+          method: "GET",
+          credentials: "include",
+        });
+        const data = await response.json();
+        console.log("data", data);  
+        if (data.sessionId) {
+          socket.emit("existingCookie", data.sessionId, username);
+        } else {
+          navigate("/");
+        }
+      } catch (error) {
+        console.error("Error fetching cookie:", error);
+      }
+    }
+
+    fetchCookie();
+  });
+
+  socket.on("login_existUser", (username, recipient) => {
+    console.log("login_existUser", username);
+    if(username)
+    navigate(`/chat/${username}`);
+    else
+    navigate("/");
+  });
+
+
   useEffect(() => {
     const updateUsers = (userList) =>
       setUsers(
-        userList.map((user) => ({
+        userList.map((user, index) => ({
           username: user.username,
           connection: user.connection,
         }))
@@ -29,19 +60,12 @@ function App({ socket }) {
       });
     };
 
-    // const handleNewMsg = (id, username, recipient) => {
-    //   setNewMessages((prev) => ({
-    //     ...prev,
-    //     [recipient]: (prev[recipient] || 0) + 1, // increment the count of new messages
-    //   }));
-    //   console.log("newmsg", newMessages);
-    // };
 
     socket.emit("get_users");
     socket.emit("get_rooms", username);
     socket.on("update_users", updateUsers);
     socket.on("update_roomList", updateRoomList);
-    // socket.on("new_msg", handleNewMsg);
+ 
 
     return () => {
       socket.off("update_users", updateUsers);
@@ -51,8 +75,7 @@ function App({ socket }) {
 
   const handleUserClick = (user) => {
     setRecipient(user);
-    // setNewMessages(prev => ({ ...prev, [user]: 0 }));
-    navigate(`/chat/${username}/${user}`);
+   navigate(`/chat/${username}/${user}`);
   };
 
   const handleRoomClick = (room) => {
@@ -66,6 +89,24 @@ function App({ socket }) {
       setRoom("");
       setError("");
     }
+  };
+
+  const handleLogout = () => {
+    socket.emit("logout");
+    async function deleteCookie() {
+      try {
+        const response = await fetch("http://localhost:3000/delete-cookie", {
+          method: "DELETE",
+          credentials: "include",
+        });
+        const data = await response.json();
+        console.log("Cookie deleted:", data);
+      } catch (error) {
+        console.error("Error deleting cookie:", error);
+      }
+    }
+    deleteCookie();
+    navigate("/");
   };
 
   return (
@@ -101,11 +142,11 @@ function App({ socket }) {
                       key={index}
                       onClick={() => handleUserClick(user.username)}
                       className="userName"
-                      style={{
-                        borderLeft: user.connection
-                          ? "5px solid green"
-                          : "5px solid red",
-                      }}
+                      // style={{
+                      //   borderLeft: user.connection
+                      //     ? "5px solid green"
+                      //     : "5px solid red",
+                      // }}
                     >
                       {user.username}
                     </div>
@@ -143,6 +184,9 @@ function App({ socket }) {
           </div>
         )}
       </div>
+      <button onClick={handleLogout} className="logoutBtn">
+        Logout
+      </button>
     </div>
   );
 }

@@ -2,7 +2,9 @@ import React, { useEffect, useState } from "react";
 import { useParams } from "react-router";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faCaretDown } from "@fortawesome/free-solid-svg-icons";
-import "./ChatArea.css";
+import "./styles/ChatArea.css";
+import { useNavigate } from "react-router-dom";
+
 
 function ChatArea({ socket }) {
   const [users, setUsers] = useState([]);
@@ -14,8 +16,39 @@ function ChatArea({ socket }) {
   const [showDropdown, setShowDropdown] = useState(false);
   const [showMembers, setShowMembers] = useState(false);
   const [error, setError] = useState("");
-  // const [hasNewMsg, setHasNewMsg] = useState(false);
+  const navigate = useNavigate();
 
+document.addEventListener("DOMContentLoaded", async () => {
+    async function fetchCookie() {
+      try {
+        const response = await fetch("http://localhost:3000/get-cookie", {
+          method: "GET",
+          credentials: "include",
+        });
+        const data = await response.json();
+        console.log("data", data);  
+        if (data.sessionId) {
+          socket.emit("existingCookie", data.sessionId, username,(recipient || roomName));
+        } else {
+          navigate("/");
+        }
+      } catch (error) {
+        console.error("Error fetching cookie:", error);
+      }
+    }
+
+    fetchCookie();
+  });
+
+  socket.on("login_existUser", (username, recipient) => {
+    console.log("login_existUser", username);
+    if(username && recipient)
+    navigate(`/chat/${username}/${recipient}`);
+    else
+    navigate("/");
+  });
+
+  
   useEffect(() => {
     const handleMessages = (messages) => {
       setMessages(messages.map((msg) => ({
@@ -90,6 +123,7 @@ function ChatArea({ socket }) {
       }
       setMessages((prev) => [...prev, { text: input, type: "sent" }]);
       setInput("");
+      setError("");
     }
   };
 
