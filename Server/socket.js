@@ -129,8 +129,8 @@ const MessageModel = mongoose.model("Message", MessageSchema);
 const SessionModel = mongoose.model("Session", SessionSchema);
 
 // Helper functions
-const updateUsers = async () => UserModel.find();
-const updateRooms = async () => RoomModel.find();
+const getUsers = async () => UserModel.find();
+const getRooms = async () => RoomModel.find();
 
 io.on("connect", (socket) => {
   console.log("A user connected");
@@ -141,7 +141,7 @@ io.on("connect", (socket) => {
       const existingSession = await SessionModel.findOne({ sessionId: cookie });
       if (existingSession) {
         const user = await UserModel.findOne({ userId: existingSession.userId });
-        const appUsers = await updateUsers(); // Assuming updateUsers() returns a list of active users
+        const appUsers = await getUsers(); // Assuming getUsers() returns a list of active users
         
         if (user && 
             (!username || username === user.username) &&
@@ -183,7 +183,7 @@ io.on("connect", (socket) => {
         socket.userId = user.userId;
         socket.username = user.username;
         socket.emit("login_success", session.sessionId);
-        io.emit("update_users", await updateUsers());
+        io.emit("update_users", await getUsers());
       } else {
         socket.emit("error", "Incorrect username or password");
       }
@@ -208,7 +208,7 @@ io.on("connect", (socket) => {
         });
         await user.save();
         socket.emit("signup_success");
-        io.emit("update_users", await updateUsers());
+        io.emit("update_users", await getUsers());
       }
     } catch (err) {
       console.error("Error during signup", err);
@@ -243,7 +243,7 @@ io.on("connect", (socket) => {
         
         socket.emit("login_success", session.sessionId);
 
-        io.emit("update_users", await updateUsers());
+        io.emit("update_users", await getUsers());
       } else {
         socket.emit("login_success", session.sessionId);
       }
@@ -258,7 +258,7 @@ io.on("connect", (socket) => {
 
 
   socket.on("get_users", async () => {
-    io.emit("update_users", await updateUsers());
+    io.emit("update_users", await getUsers());
   });
 
   socket.on("get_msgs", async ({ to, from }) => {
@@ -311,7 +311,7 @@ io.on("connect", (socket) => {
           await room.save();
           io.emit(
             "update_roomList",
-            (await updateRooms()).map((r) => r.name)
+            (await getRooms()).map((r) => r.name)
           );
         } else {
           socket.emit("error", "User not found");
@@ -349,7 +349,7 @@ io.on("connect", (socket) => {
           await room.save();
           io.emit(
             "update_roomList",
-            (await updateRooms()).map((r) => r.name)
+            (await getRooms()).map((r) => r.name)
           );
 
           const roomMembers = await UserModel.find({
@@ -415,7 +415,7 @@ io.on("connect", (socket) => {
     console.log("logout");
     await SessionModel.deleteMany({});
 
-    io.emit("update_users", await updateUsers());
+    io.emit("update_users", await getUsers());
     socket.disconnect();
   });
 
@@ -425,7 +425,7 @@ io.on("connect", (socket) => {
         console.log("disconnect");
         // await SessionModel.deleteOne({ userId: socket.userId });
 
-        io.emit("update_users", await updateUsers());
+        io.emit("update_users", await getUsers());
       }
       socket.disconnect();
     } catch (err) {

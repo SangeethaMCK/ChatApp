@@ -45,7 +45,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
 
   useEffect(() => {
-    const updateUsers = (userList) =>
+    const getUsers = (userList) =>
       setUsers(
         userList.map((user, index) => ({
           username: user.username,
@@ -63,12 +63,12 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     socket.emit("get_users");
     socket.emit("get_rooms", username);
-    socket.on("update_users", updateUsers);
+    socket.on("update_users", getUsers);
     socket.on("update_roomList", updateRoomList);
  
 
     return () => {
-      socket.off("update_users", updateUsers);
+      socket.off("update_users", getUsers);
       socket.off("update_roomList", updateRoomList);
     };
   }, [socket, username]);
