@@ -2,22 +2,22 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import "./styles/Login.css";
 
-
 function Login({ socket }) {
   const [username, setUsernameInput] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const navigate = useNavigate();
 
-  document.addEventListener("DOMContentLoaded", async () => {
+  useEffect(() => {
     async function fetchCookie() {
       try {
         const response = await fetch("http://localhost:3000/get-cookie", {
           method: "GET",
           credentials: "include",
+          mode: "cors",
         });
         const data = await response.json();
-        console.log("data", data);  
+        console.log("data", data);
         if (data.sessionId) {
           socket.emit("existingCookie", data.sessionId);
         } else {
@@ -29,22 +29,27 @@ function Login({ socket }) {
     }
 
     fetchCookie();
-  });
+  }, [navigate, socket]);
 
-  socket.on("login_existUser", (username) => {
-    console.log("login_existUser", username);
-    if(username){
-    navigate(`/chat/${username}`);
-    }
-  });
+  useEffect(() => {
+    socket.on("login_existUser", (username) => {
+      console.log("login_existUser", username);
+      if (username) {
+        navigate(`/chat/${username}`);
+      }
+    });
 
+    return () => {
+      socket.off("login_existUser");
+    };
+  }, [navigate, socket]);
 
   async function setCookie(sessionId, username) {
     try {
       const response = await fetch("http://localhost:3000/set-cookie", {
         method: "POST",
-        credentials: "include", 
-        body: JSON.stringify({ sessionId: sessionId }),
+        credentials: "include",
+        body: JSON.stringify({ sessionId }),
         headers: {
           "Content-Type": "application/json",
         },
@@ -68,20 +73,19 @@ function Login({ socket }) {
       socket.emit("login", { username, password });
 
       socket.on("login_success", (sessionId) => {
-        // console.log('sessionId', sessionId);
         setCookie(sessionId, username);
-        // console.log(username,data.username);
-        // document.cookie = `sessionId=${sessionId}; path=/`;
-        // navigate(`/chat/${username}`);
-
       });
 
       socket.on("error", (err) => {
         setError(err);
       });
     }
-  };
 
+    return () => {
+      socket.off("login_success");
+      socket.off("error");
+    };
+  };
 
   return (
     <div className="UserAuth">

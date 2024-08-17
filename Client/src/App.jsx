@@ -8,12 +8,12 @@ function App({ socket }) {
   const [room, setRoom] = useState("");
   const [rooms, setRooms] = useState([]);
   const [showUsers, setShowUsers] = useState(true);
+  const [newMessages, setNewMessages] = useState({});
   const [error, setError] = useState("");
-  // const [newMessages, setNewMessages] = useState({});
   const { username } = useParams();
   const navigate = useNavigate();
 
-document.addEventListener("DOMContentLoaded", async () => {
+  useEffect(() => {
     async function fetchCookie() {
       try {
         const response = await fetch("http://localhost:3000/get-cookie", {
@@ -33,49 +33,62 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
 
     fetchCookie();
-  });
-
-  socket.on("login_existUser", (username, recipient) => {
-    console.log("login_existUser", username);
-    if(username)
-    navigate(`/chat/${username}`);
-    else
-    navigate("/");
-  });
-
+  }, [navigate, socket, username]);
 
   useEffect(() => {
     const getUsers = (userList) =>
       setUsers(
-        userList.map((user, index) => ({
+        userList.map((user) => ({
           username: user.username,
           connection: user.connection,
         }))
       );
+
     const updateRoomList = (roomList) => {
       setRooms(roomList);
       roomList.forEach((room) => {
         socket.emit("join_room", room);
-        socket.emit("get_rooms", username);
       });
     };
 
+    const handlePrivateMessage = ({ content, from, to }) => {
+      if (to === username) {
+        setNewMessages((prevMessages) => ({
+          ...prevMessages,
+          [from]: (prevMessages[from] || 0) + 1,
+        }));
+      }
+    };
+
+    const handleRoomMessage = ({ content, from, roomName }) => {
+      setNewMessages((prevMessages) => ({
+        ...prevMessages,
+        [from]: (prevMessages[from] || 0) + 1,
+      }));
+    };
 
     socket.emit("get_users");
     socket.emit("get_rooms", username);
     socket.on("update_users", getUsers);
     socket.on("update_roomList", updateRoomList);
- 
+    socket.on('pvt_message', handlePrivateMessage);
+    socket.on('room_message', handleRoomMessage);
 
     return () => {
       socket.off("update_users", getUsers);
       socket.off("update_roomList", updateRoomList);
+      socket.off('pvt_message', handlePrivateMessage);
+      socket.off('room_message', handleRoomMessage);
     };
   }, [socket, username]);
 
   const handleUserClick = (user) => {
     setRecipient(user);
-   navigate(`/chat/${username}/${user}`);
+    setNewMessages((prevMessages) => ({
+      ...prevMessages,
+      [user]: 0,
+    }));
+    navigate(`/chat/${username}/${user}`);
   };
 
   const handleRoomClick = (room) => {
@@ -86,6 +99,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     e.preventDefault();
     if (room.trim()) {
       socket.emit("create_room", room, username);
+      socket.emit("get_rooms", username);
       setRoom("");
       setError("");
     }
@@ -137,22 +151,21 @@ document.addEventListener("DOMContentLoaded", async () => {
             {users.map(
               (user, index) =>
                 user.username !== username && (
-                  <div className="userChat">
+                  <div key={index} className="userChat">
                     <div
-                      key={index}
                       onClick={() => handleUserClick(user.username)}
                       className="userName"
-                      // style={{
-                      //   borderLeft: user.connection
-                      //     ? "5px solid green"
-                      //     : "5px solid red",
-                      // }}
+                      style={{
+                        borderLeft: user.connection
+                          ? "5px solid green"
+                          : "5px solid red",
+                      }}
                     >
                       {user.username}
                     </div>
-                    {/* {newMessages[user.username] > 0 && (
+                    {newMessages[user.username] > 0 && (
                       <div className="badge">{newMessages[user.username]}</div>
-                    )} */}
+                     )}
                   </div>
                 )
             )}

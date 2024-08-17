@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import './styles/SignUp.css';
 
@@ -10,29 +10,36 @@ function Signup({ socket }) {
   const [error, setError] = useState('');
   const navigate = useNavigate();
 
-  socket.on('error', (err) => {
-    setError(err);
-  });
+  useEffect(() => {
+    socket.on('error', (err) => {
+      setError(err);
+    });
+
+    return () => {
+      socket.off('error');
+    };
+  }, [socket]);
 
   const handleSubmit = (e) => {
     e.preventDefault();
+
     if (username.trim() && password.trim() && email.trim() && confirmedPassword.trim()) {
       if (password !== confirmedPassword) {
         setError('Passwords do not match');
-      }
-      else {
+      } else {
         socket.emit('signup', { username, password, email });
+
         socket.on('signup_success', () => {
           console.log(`${username} has signed up`);
-        setError('');
-        navigate('/');
+          setError('');
+          navigate('/');
         });
       }
+    } else {
+      setError('Please fill all the fields');
     }
-    else{
-        setError('Please fill all the fields');
-    }
-  }
+  };
+
   return (
     <div className="Signup">
       <h2 className="heading">CHATTER-BOX</h2>
@@ -66,10 +73,10 @@ function Signup({ socket }) {
           onChange={(e) => setConfirmedPassword(e.target.value)}
         />
         {error && <p className="error">{error}</p>}
-          <button type="submit" className="signupButton">Sign Up</button>
+        <button type="submit" className="signupButton">Sign Up</button>
       </form>
-    </div>  
-  )
+    </div>
+  );
 }
 
 export default Signup;

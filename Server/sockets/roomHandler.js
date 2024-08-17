@@ -2,8 +2,10 @@ const RoomModel = require("../models/rooms");
 const UserModel = require("../models/users");
 const { handleError } = require('../utils/utils');
 const { getRooms } = require('../utils/utils');
+const uuid = require('uuid');
 
 const roomHandlers = (socket, io) => {
+  
   socket.on("create_room", async (roomName, username) => {
     try {
         let room = await RoomModel.findOne({ name: roomName });
@@ -18,9 +20,10 @@ const roomHandlers = (socket, io) => {
               users: [user.userId],
             });
             await room.save();
-            io.emit("update_roomList", (await getRooms()).map((r) => r.name));
+            const userRooms = await RoomModel.find({ users: user.userId });
+            io.emit("update_roomList", userRooms.map((r) => r.name));
           } else {
-            handleError(socket, "User not found");
+            handleError(socket, "User not found create room");
           }
         }
       } catch (err) {
@@ -29,13 +32,15 @@ const roomHandlers = (socket, io) => {
   });
 
   socket.on("get_rooms", async (username) => {
+    console.log("get_rooms", username);
     try {
         const user = await UserModel.findOne({ username });
+        console.log("user", user);
         if (user) {
           const userRooms = await RoomModel.find({ users: user.userId });
           socket.emit("update_roomList", userRooms.map((room) => room.name));
         } else {
-          handleError(socket, "User not found");
+          handleError(socket, "User not found get rooms");
         }
       } catch (err) {
         handleError(socket, "Error fetching rooms");
@@ -50,15 +55,18 @@ const roomHandlers = (socket, io) => {
           if (room && !room.users.includes(friend.userId)) {
             room.users.push(friend.userId);
             await room.save();
-            io.emit("update_roomList", (await getRooms()).map((r) => r.name));
+
+            const userRooms = await RoomModel.find({ users: user.userId });
+            io.emit("update_roomList", userRooms.map((r) => r.name));
 
             const roomMembers = await UserModel.find({ userId: { $in: room.users } });
+            console.log("roomMembers", roomMembers);
             socket.emit("room_members", roomMembers.map((roomMember) => roomMember.username));
           } else {
             handleError(socket, "Room does not exist or user already in room");
           }
         } else {
-          handleError(socket, "User not found");
+          handleError(socket, "User not found add friend to room");
         }
       } catch (err) {
         handleError(socket, "Error adding friend to room");
@@ -72,6 +80,7 @@ const roomHandlers = (socket, io) => {
   socket.on("get_roomMsgs", async ({ roomName }) => {
     try {
         const messages = await MessageModel.find({ room: roomName });
+        console.log("messages", messages);
         socket.emit("room_messages", messages);
 
         const roomDetails = await RoomModel.findOne({ name: roomName });
@@ -84,7 +93,7 @@ const roomHandlers = (socket, io) => {
           handleError(socket, "Room not found");
         }
       } catch (err) {
-        handleError(socket, "Error fetching room messages");
+        handleError(socket, "Error fetching room messages", err);
       }
   });
 

@@ -10,16 +10,16 @@ const handleError = (socket, message) => {
     socket.emit("error", message);
   };
   
-  const createSession = async (userId) => {
-    const sessionId = uuid.v4();
-    const session = new SessionModel({
-      sessionId,
-      userId,
-      expires: Date.now() + sessionValidity,
-    });
-    await session.save();
-    return sessionId;
-  };
+  // const createSession = async (sessionId,userId) => {
+  //   // const sessionId = uuid.v4();
+  //   const session = new SessionModel({
+  //     sessionId,
+  //     userId,
+  //     expires: Date.now() + sessionValidity,
+  //   });
+  //   await session.save();
+  //   return sessionId;
+  // };
 
   const getUsers = async () => {
     const users = await UserModel.find();
@@ -31,5 +31,5 @@ const handleError = (socket, message) => {
     return rooms;
   };
   
-  module.exports = { handleError, createSession, getUsers, getRooms };
+  module.exports = { handleError, getUsers, getRooms, sessionValidity };
   

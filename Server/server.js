@@ -1,3 +1,4 @@
+// Importing required modules
 const http = require("http");
 const socketio = require("socket.io");
 const express = require("express");
@@ -7,16 +8,18 @@ const sharedsession = require("socket.io-express-session");
 const cors = require("cors");
 const cookieParser = require("cookie-parser");
 
+// Importing custom modules
 const sessionMiddleware = require("./config/session");
 const connectDB = require("./config/db");
 const socketHandlers = require("./sockets/socketHandlers");
 const cookieRoutes = require("./routes/cookieRoutes");
 
-const port = 3000;
+// App and server setup
 const app = express();
 const server = http.createServer(app);
+const port = 3000;
 
-// Middleware
+// Middleware configuration
 app.use(
   cors({
     origin: "http://localhost:5173",
@@ -27,9 +30,10 @@ app.use(express.json());
 app.use(cookieParser(process.env.cookieSecret));
 app.use(sessionMiddleware);
 
-// Use the cookie routes
+// Routes
 app.use("/", cookieRoutes);
 
+// Socket.IO setup with shared session
 const io = socketio(server, {
   cors: {
     origin: "*",
@@ -43,8 +47,9 @@ io.use(
   })
 );
 
+// Socket handlers
 socketHandlers(io);
 
+// Start server and connect to database
 server.listen(port, () => console.log(`Server running on port ${port}`));
-
 connectDB();

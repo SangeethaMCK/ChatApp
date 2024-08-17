@@ -20,17 +20,18 @@ const messageHandlers = (socket, io) => {
 
   socket.on("private_message", async ({ content, to, from }) => {
     try {
+        const msgId = uuid.v4();
         const recipient = await UserModel.findOne({ username: to });
         if (recipient) {
           await MessageModel.create({
-            messageId: uuid.v4(),
+            messageId: msgId,
             message: content,
             user: from,
             recipient: to,
           });
-          io.emit("pvt_message", { content, from, to });
+          io.emit("pvt_message", { content, from, to  });
         } else {
-          handleError(socket, "User not found");
+          handleError(socket, "User not found private message");
         }
       } catch (err) {
         handleError(socket, "Error saving private message");

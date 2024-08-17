@@ -216,45 +216,45 @@ io.on("connect", (socket) => {
     }
   });
 
- socket.on("login", async (data) => {
-  try {
-    const username = data.username.trim();
-    const password = data.password.trim();
+//  socket.on("login", async (data) => {
+//   try {
+//     const username = data.username.trim();
+//     const password = data.password.trim();
 
-    const user = await UserModel.findOne({ username });
+//     const user = await UserModel.findOne({ username });
     
-    if (user && user.password === password) {
-      let session = await SessionModel.findOne({ userId: user.userId });
+//     if (user && user.password === password) {
+//       let session = await SessionModel.findOne({ userId: user.userId });
 
-      if (!session || session.expires < Date.now()) {
-        if (session) await SessionModel.deleteOne({ userId: user.userId });
+//       if (!session || session.expires < Date.now()) {
+//         if (session) await SessionModel.deleteOne({ userId: user.userId });
 
-        const sessionId = uuid.v4();
-        session = new SessionModel({
-          sessionId,
-          userId: user.userId,
-          expires: Date.now() + sessionValidity,
-        });
+//         const sessionId = uuid.v4();
+//         session = new SessionModel({
+//           sessionId,
+//           userId: user.userId,
+//           expires: Date.now() + sessionValidity,
+//         });
 
-        await session.save();
+//         await session.save();
 
-        socket.userId = user.userId;
-        socket.username = user.username;
+//         socket.userId = user.userId;
+//         socket.username = user.username;
         
-        socket.emit("login_success", session.sessionId);
+//         socket.emit("login_success", session.sessionId);
 
-        io.emit("update_users", await getUsers());
-      } else {
-        socket.emit("login_success", session.sessionId);
-      }
-    } else {
-      socket.emit("error", "Incorrect username or password");
-    }
-  } catch (err) {
-    console.error("Error during login", err);
-    socket.emit("error", "Error during login");
-  }
-});
+//         io.emit("update_users", await getUsers());
+//       } else {
+//         socket.emit("login_success", session.sessionId);
+//       }
+//     } else {
+//       socket.emit("error", "Incorrect username or password");
+//     }
+//   } catch (err) {
+//     console.error("Error during login", err);
+//     socket.emit("error", "Error during login");
+//   }
+// });
 
 
   socket.on("get_users", async () => {
@@ -413,24 +413,12 @@ io.on("connect", (socket) => {
 
   socket.on("logout", async () => {
     console.log("logout");
-    await SessionModel.deleteMany({});
-
+    await SessionModel.deleteOne({ userId: socket.userId });
     io.emit("update_users", await getUsers());
-    socket.disconnect();
+    // socket.disconnect();
   });
 
-  socket.on("disconnect", async () => {
-    try {
-      if (socket.userId) {
-        console.log("disconnect");
-        // await SessionModel.deleteOne({ userId: socket.userId });
-
-        io.emit("update_users", await getUsers());
-      }
-      socket.disconnect();
-    } catch (err) {
-      console.error("Error updating user on logout", err);
-      socket.emit("error", "Error updating user on logout");
-    }
-  });
+  // socket.on("disconnect", async () => {
+  //   console.log("disconnect");
+  // });
 });

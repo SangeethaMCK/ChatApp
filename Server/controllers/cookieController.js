@@ -28,7 +28,7 @@ exports.setCookie = async (req, res) => {
   exports.deleteCookie = (req, res) => {
     try {
       res.clearCookie("sessionId");
-      res.send("Cookie has been deleted");
+      res.json("Cookie has been deleted");
     } catch (err) {
       console.error("Error deleting cookie", err);
       res.sendStatus(err.statusCode || 500);

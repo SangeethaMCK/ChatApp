@@ -1,10 +1,8 @@
 import React, { useEffect, useState } from "react";
-import { useParams } from "react-router";
+import { useParams, useNavigate } from "react-router-dom";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faCaretDown } from "@fortawesome/free-solid-svg-icons";
 import "./styles/ChatArea.css";
-import { useNavigate } from "react-router-dom";
-
 
 function ChatArea({ socket }) {
   const [users, setUsers] = useState([]);
@@ -18,7 +16,7 @@ function ChatArea({ socket }) {
   const [error, setError] = useState("");
   const navigate = useNavigate();
 
-document.addEventListener("DOMContentLoaded", async () => {
+  useEffect(() => {
     async function fetchCookie() {
       try {
         const response = await fetch("http://localhost:3000/get-cookie", {
@@ -26,9 +24,9 @@ document.addEventListener("DOMContentLoaded", async () => {
           credentials: "include",
         });
         const data = await response.json();
-        console.log("data", data);  
+        console.log("data", data);
         if (data.sessionId) {
-          socket.emit("existingCookie", data.sessionId, username,(recipient || roomName));
+          socket.emit("existingCookie", data.sessionId, username, recipient || roomName);
         } else {
           navigate("/");
         }
@@ -38,17 +36,20 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
 
     fetchCookie();
-  });
+  }, [socket, navigate, username, recipient, roomName]);
 
-  socket.on("login_existUser", (username, recipient) => {
-    console.log("login_existUser", username);
-    if(username && recipient)
-    navigate(`/chat/${username}/${recipient}`);
-    else
-    navigate("/");
-  });
+  // useEffect(() => {
+  //   socket.on("login_existUser", (username, recipient) => {
+  //     console.log("login_existUser", username);
+  //     if (username && (recipient || roomName)) navigate(`/chat/${username}/${recipient || roomName}`);
+  //     else navigate("/");
+  //   });
 
-  
+  //   return () => {
+  //     socket.off("login_existUser");
+  //   };
+  // }, [socket, navigate]);
+
   useEffect(() => {
     const handleMessages = (messages) => {
       setMessages(messages.map((msg) => ({
@@ -59,6 +60,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     };
 
     const handleRoomMessages = (messages) => {
+      console.log("handleRoomMessages", messages);
       setMessages(messages.map((msg) => ({
         text: msg.message,
         type: msg.user === username ? "sent" : "received",
@@ -68,7 +70,6 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     const handlePrivateMessage = (data) => {
       if (data.to === username && data.from === recipient) {
-        // if(prevState.messages.some(m => m.id === data._id)) setHasNewMsg(false);
         setMessages((prev) => [...prev, { text: data.content, type: "received" }]);
       }
     };
@@ -86,7 +87,6 @@ document.addEventListener("DOMContentLoaded", async () => {
     socket.emit("get_users");
     socket.emit("get_rooms");
     socket.on("update_users", setUsers);
-    socket.on("update_rooms", (rooms) => setRooms(rooms));
 
     if (recipient) {
       socket.emit("get_msgs", { to: recipient, from: username });
@@ -95,7 +95,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     if (roomName) {
       socket.emit("join_room", roomName);
-      socket.emit("get_roomMsgs", { roomName, username });
+      socket.emit("get_roomMsgs", { roomName });
       socket.on("room_messages", handleRoomMessages);
       socket.on("room_members", setRoomMembers);
     }
@@ -132,7 +132,6 @@ document.addEventListener("DOMContentLoaded", async () => {
     const friendUsername = friend.trim();
     if (users.some(user => user.username === friendUsername)) {
       socket.emit("add_friend", { roomName, friendUsername });
-      socket.emit("get_rooms", username);
       setFriend("");
       setError("");
     } else {
@@ -181,7 +180,6 @@ document.addEventListener("DOMContentLoaded", async () => {
               placeholder="Enter username here..."
               value={friend}
               onChange={(e) => setFriend(e.target.value)}
-              autoComplete="new-password"
               onFocus={handleInputFocus}
               onBlur={handleInputBlur}
             />
