@@ -1,35 +1,66 @@
-const { handleError,getUsers, sessionValidity } = require('../utils/utils');
+const { handleError,getUsers, sessionValidity, getRooms } = require('../utils/utils');
 const UserModel = require("../models/users");
 const SessionModel = require("../models/session");
+const RoomModel = require("../models/rooms");
 const uuid = require("uuid");
 const bcrypt = require("bcrypt");
 
 
 const authHandlers = (socket, io) => {
-  socket.on("existingCookie", async (cookie, username, recipient) => {
+  
+  socket.on("existingCookie", async (cookieId, username, recipient) => {
     try {
-        const existingSession = await SessionModel.findOne({ sessionId: cookie });
-        if (existingSession) {
-          const user = await UserModel.findOne({ userId: existingSession.userId });
-          const appUsers = await getUsers();
 
-          if (user &&
-              (!username || username === user.username) &&
-              (!recipient || appUsers.some(u => u.username === recipient))
-          ) {
-            socket.userId = user.userId;
-            socket.username = user.username;
-            socket.emit("login_existUser", user.username, recipient);
-          } else {
-            socket.emit("login_existUser", "", "");
-          }
-        } else {
-          socket.emit("login_existUser", "", "");
-        }
-      } catch (error) {
-        handleError(socket, "Error during existing cookie check");
+      // check if cookie exists
+      const existingSession = await SessionModel.findOne({ sessionId: cookieId });
+      if (!existingSession) {
+        socket.emit("login_existUser", "", "");
+        return;
       }
+      // check if user exists
+      const user = await UserModel.findOne({ userId: existingSession.userId });
+      if (!user || (username && username !== user.username) ) {
+        socket.emit("login_existUser", "", "");
+        return;
+      }
+
+      const appUsers = await getUsers();
+      const rooms = await getRooms();
+      const roomDetails = await RoomModel.findOne({ name: recipient });
+      const idsInRoom = roomDetails ? roomDetails.users : [];
+      // console.log("roomDetails", roomDetails);
+      // console.log("idsInRoom", idsInRoom);
+      // check if recipient exists
+      const recipientExists = appUsers.some(
+        (u) => u.username === recipient 
+      );
+
+      const roomExists = idsInRoom.includes(user.userId);
+
+      console.log("recipientExists", recipientExists, roomExists);
+
+      if (recipient && !recipientExists) {
+        if(roomExists){
+          socket.emit("login_existUser",username, recipient);
+          return;
+        }
+        socket.emit("login_existUser", "", "");
+        return;
+      }
+        
+      
+
+      console.log("existing cookie", user.username, recipient);
+
+      socket.userId = user.userId;
+      socket.username = user.username;
+      socket.emit("login_existUser", user.username, recipient);
+
+    } catch (error) {
+      handleError(socket, `Error during existing cookie check: ${error.message}`);
+    }
   });
+
 
 socket.on("login", async (data) => {
   try {

@@ -1,5 +1,6 @@
 const RoomModel = require("../models/rooms");
 const UserModel = require("../models/users");
+const MessageModel = require("../models/message");
 const { handleError } = require('../utils/utils');
 const { getRooms } = require('../utils/utils');
 const uuid = require('uuid');
@@ -79,8 +80,7 @@ const roomHandlers = (socket, io) => {
 
   socket.on("get_roomMsgs", async ({ roomName }) => {
     try {
-        const messages = await MessageModel.find({ room: roomName });
-        console.log("messages", messages);
+        const messages = await MessageModel.find({ recipient: roomName });
         socket.emit("room_messages", messages);
 
         const roomDetails = await RoomModel.findOne({ name: roomName });
@@ -98,12 +98,13 @@ const roomHandlers = (socket, io) => {
   });
 
   socket.on("room_message", async ({ content, roomName, from }) => {
+    console.log("room_message", content, roomName, from);
     try {
         await MessageModel.create({
           messageId: uuid.v4(),
           message: content,
           user: from,
-          room: roomName,
+          recipient: roomName,
         });
         socket.to(roomName).emit("room_message", { content, from, roomName });
       } catch (err) {

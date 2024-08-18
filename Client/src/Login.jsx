@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import Existing from "./Existing";
 import "./styles/Login.css";
 
 function Login({ socket }) {
@@ -11,7 +12,7 @@ function Login({ socket }) {
   useEffect(() => {
     async function fetchCookie() {
       try {
-        const response = await fetch("http://localhost:3000/get-cookie", {
+        const response = await fetch("http://localhost:3000/cookie", {
           method: "GET",
           credentials: "include",
           mode: "cors",
@@ -31,22 +32,13 @@ function Login({ socket }) {
     fetchCookie();
   }, [navigate, socket]);
 
-  useEffect(() => {
-    socket.on("login_existUser", (username) => {
-      console.log("login_existUser", username);
-      if (username) {
-        navigate(`/chat/${username}`);
-      }
-    });
+  Existing({ socket });
 
-    return () => {
-      socket.off("login_existUser");
-    };
-  }, [navigate, socket]);
+
 
   async function setCookie(sessionId, username) {
     try {
-      const response = await fetch("http://localhost:3000/set-cookie", {
+      const response = await fetch("http://localhost:3000/cookie", {
         method: "POST",
         credentials: "include",
         body: JSON.stringify({ sessionId }),

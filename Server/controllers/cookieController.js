@@ -7,7 +7,7 @@ exports.setCookie = async (req, res) => {
         maxAge: 1000 * 60 * 60 * 24 * 7,
         path: "/",
       });
-      res.json("Cookie has been set");
+      res.json("Cookie has been set"); //200
     } catch (err) {
       console.error("Error setting cookie", err);
       res.status(500).send("Error setting cookie");
@@ -28,7 +28,7 @@ exports.setCookie = async (req, res) => {
   exports.deleteCookie = (req, res) => {
     try {
       res.clearCookie("sessionId");
-      res.json("Cookie has been deleted");
+      res.json("Cookie has been deleted"); //204
     } catch (err) {
       console.error("Error deleting cookie", err);
       res.sendStatus(err.statusCode || 500);

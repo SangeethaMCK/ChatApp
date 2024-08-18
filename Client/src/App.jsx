@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
+import Existing from "./Existing";
 import "./styles/App.css";
 
 function App({ socket }) {
@@ -8,15 +9,15 @@ function App({ socket }) {
   const [room, setRoom] = useState("");
   const [rooms, setRooms] = useState([]);
   const [showUsers, setShowUsers] = useState(true);
-  const [newMessages, setNewMessages] = useState({});
+  const [newMessages, setNewMessages] = useState({}); 
   const [error, setError] = useState("");
   const { username } = useParams();
   const navigate = useNavigate();
 
-  useEffect(() => {
+document.addEventListener("DOMContentLoaded", async () => {
     async function fetchCookie() {
       try {
-        const response = await fetch("http://localhost:3000/get-cookie", {
+        const response = await fetch("http://localhost:3000/cookie", {
           method: "GET",
           credentials: "include",
         });
@@ -33,34 +34,44 @@ function App({ socket }) {
     }
 
     fetchCookie();
-  }, [navigate, socket, username]);
+  });
+  
+  // socket.on("login_existUser", (username) => {
+  //   console.log("login_existUser", username);
+  //   if(username)
+  //   navigate(`/chat/${username}`);
+  //   else
+  //   navigate("/");
+  // });
+  Existing({ socket });
 
   useEffect(() => {
     const getUsers = (userList) =>
       setUsers(
-        userList.map((user) => ({
+        userList.map((user, index) => ({
           username: user.username,
           connection: user.connection,
         }))
       );
-
     const updateRoomList = (roomList) => {
       setRooms(roomList);
       roomList.forEach((room) => {
         socket.emit("join_room", room);
+        // socket.emit("get_rooms", username);
       });
     };
 
-    const handlePrivateMessage = ({ content, from, to }) => {
+    const handlePrivateMessage = ({ content, from, to}) => {
       if (to === username) {
         setNewMessages((prevMessages) => ({
-          ...prevMessages,
+          // ...prevMessages,
           [from]: (prevMessages[from] || 0) + 1,
         }));
       }
     };
-
+    
     const handleRoomMessage = ({ content, from, roomName }) => {
+      
       setNewMessages((prevMessages) => ({
         ...prevMessages,
         [from]: (prevMessages[from] || 0) + 1,
@@ -73,22 +84,24 @@ function App({ socket }) {
     socket.on("update_roomList", updateRoomList);
     socket.on('pvt_message', handlePrivateMessage);
     socket.on('room_message', handleRoomMessage);
+ 
 
     return () => {
       socket.off("update_users", getUsers);
       socket.off("update_roomList", updateRoomList);
       socket.off('pvt_message', handlePrivateMessage);
-      socket.off('room_message', handleRoomMessage);
     };
   }, [socket, username]);
 
   const handleUserClick = (user) => {
     setRecipient(user);
+
     setNewMessages((prevMessages) => ({
       ...prevMessages,
-      [user]: 0,
+      [user]: 0,  // Reset the message count to 0
     }));
-    navigate(`/chat/${username}/${user}`);
+    
+   navigate(`/chat/${username}/${user}`);
   };
 
   const handleRoomClick = (room) => {
@@ -99,7 +112,6 @@ function App({ socket }) {
     e.preventDefault();
     if (room.trim()) {
       socket.emit("create_room", room, username);
-      socket.emit("get_rooms", username);
       setRoom("");
       setError("");
     }
@@ -109,7 +121,7 @@ function App({ socket }) {
     socket.emit("logout");
     async function deleteCookie() {
       try {
-        const response = await fetch("http://localhost:3000/delete-cookie", {
+        const response = await fetch("http://localhost:3000/cookie", {
           method: "DELETE",
           credentials: "include",
         });
@@ -151,8 +163,9 @@ function App({ socket }) {
             {users.map(
               (user, index) =>
                 user.username !== username && (
-                  <div key={index} className="userChat">
+                  <div className="userChat">
                     <div
+                      key={index}
                       onClick={() => handleUserClick(user.username)}
                       className="userName"
                       style={{

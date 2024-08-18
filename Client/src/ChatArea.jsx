@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import Existing from "./Existing";
 import { useParams, useNavigate } from "react-router-dom";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faCaretDown } from "@fortawesome/free-solid-svg-icons";
@@ -19,7 +20,7 @@ function ChatArea({ socket }) {
   useEffect(() => {
     async function fetchCookie() {
       try {
-        const response = await fetch("http://localhost:3000/get-cookie", {
+        const response = await fetch("http://localhost:3000/cookie", {
           method: "GET",
           credentials: "include",
         });
@@ -37,18 +38,8 @@ function ChatArea({ socket }) {
 
     fetchCookie();
   }, [socket, navigate, username, recipient, roomName]);
-
-  // useEffect(() => {
-  //   socket.on("login_existUser", (username, recipient) => {
-  //     console.log("login_existUser", username);
-  //     if (username && (recipient || roomName)) navigate(`/chat/${username}/${recipient || roomName}`);
-  //     else navigate("/");
-  //   });
-
-  //   return () => {
-  //     socket.off("login_existUser");
-  //   };
-  // }, [socket, navigate]);
+  
+  Existing({ socket });
 
   useEffect(() => {
     const handleMessages = (messages) => {
@@ -114,12 +105,13 @@ function ChatArea({ socket }) {
 
   const handleSubmit = (e) => {
     e.preventDefault();
+    console.log("handleSubmit", input, recipient, roomName, username);
     if (input.trim()) {
-      const message = { content: input, from: username };
+      const message = { content: input, from: username, to: recipient, room: roomName };
       if (recipient) {
-        socket.emit("private_message", { ...message, to: recipient });
+        socket.emit("private_message", {content: input, to: recipient, from: username });
       } else if (roomName) {
-        socket.emit("room_message", { ...message, roomName });
+        socket.emit("room_message", {content: input, roomName, from: username });
       }
       setMessages((prev) => [...prev, { text: input, type: "sent" }]);
       setInput("");
