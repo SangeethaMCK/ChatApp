@@ -2,6 +2,7 @@
 ```
 ChatApp
 ├─ ChatApp
+│  ├─ .env
 │  ├─ eslint.config.js
 │  ├─ index.html
 │  ├─ package-lock.json
@@ -9,7 +10,6 @@ ChatApp
 │  ├─ public
 │  │  └─ vite.svg
 │  ├─ server
-│  │  ├─ .env
 │  │  ├─ config
 │  │  │  ├─ db.js
 │  │  │  └─ session.js
@@ -23,7 +23,6 @@ ChatApp
 │  │  ├─ routes
 │  │  │  └─ cookieRoutes.js
 │  │  ├─ server.js
-│  │  ├─ socket.js
 │  │  ├─ sockets
 │  │  │  ├─ authHandler.js
 │  │  │  ├─ messageHandler.js
