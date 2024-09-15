@@ -17,7 +17,7 @@ import cookieRoutes from "./routes/cookieRoutes.js";
 // App and server setup
 const app = express();
 const server = http.createServer(app);
-const port = 3001;
+const port = process.env.PORT || 3001;
 
 // Middleware configuration
 app.use(
