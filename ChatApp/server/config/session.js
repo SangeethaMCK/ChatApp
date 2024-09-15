@@ -11,7 +11,10 @@ const sessionMiddleware = session({
   resave: false,
   saveUninitialized: false,
   cookie: { maxAge: sessionValidity },
-  store: MongoStore.create({ mongoUrl: process.env.MONGODB_URI }),
+  store: MongoStore.create({ mongoUrl: process.env.MONGODB_URI,
+    collectionName : 'ChatApp',
+   }),
+
 });
 
 export default sessionMiddleware;
