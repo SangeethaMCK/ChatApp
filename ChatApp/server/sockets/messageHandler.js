@@ -1,7 +1,7 @@
 import MessageModel from "../models/message.js";
 import UserModel from "../models/users.js";
 import { handleError } from '../utils/utils.js';
-import { v4 as uuid } from 'uuid';
+import {  v4 } from 'uuid';
 
 const messageHandlers = (socket, io) => {
   socket.on("get_msgs", async ({ to, from }) => {
@@ -19,8 +19,10 @@ const messageHandlers = (socket, io) => {
   });
 
   socket.on("private_message", async ({ content, to, from }) => {
+    console.log("private_message", content, to, from);
+
     try {
-        const msgId = uuid.v4();
+        const msgId = v4();
         const recipient = await UserModel.findOne({ username: to });
         if (recipient) {
           await MessageModel.create({

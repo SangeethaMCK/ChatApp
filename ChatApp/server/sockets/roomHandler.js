@@ -2,20 +2,23 @@ import RoomModel from "../models/rooms.js";
 import UserModel from "../models/users.js";
 import MessageModel from "../models/message.js";
 import { handleError} from '../utils/utils.js';
-import { v4 as uuid } from 'uuid';
+import { v4 } from 'uuid';
 
 const roomHandlers = (socket, io) => {
   
   socket.on("create_room", async (roomName, username) => {
+    console.log('createrrom',roomName, username);
     try {
         let room = await RoomModel.findOne({ name: roomName });
+        console.log('room',room);
         if (room) {
           handleError(socket, "Room already exists");
         } else {
           const user = await UserModel.findOne({ username });
+          console.log('user',user);
           if (user) {
             room = new RoomModel({
-              roomId: uuid.v4(),
+              roomId: v4(),
               name: roomName,
               users: [user.userId],
             });
@@ -100,7 +103,7 @@ const roomHandlers = (socket, io) => {
     console.log("room_message", content, roomName, from);
     try {
         await MessageModel.create({
-          messageId: uuid.v4(),
+          messageId: v4(),
           message: content,
           user: from,
           recipient: roomName,

@@ -18,7 +18,7 @@ function Login({ socket }) {
           mode: "cors",
         });
         const data = await response.json();
-        console.log("data", data);
+        // console.log("data", data);
         if (data.sessionId) {
           socket.emit("existingCookie", data.sessionId);
         } else {

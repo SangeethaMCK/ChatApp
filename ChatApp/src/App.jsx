@@ -9,12 +9,12 @@ function App({ socket }) {
   const [room, setRoom] = useState("");
   const [rooms, setRooms] = useState([]);
   const [showUsers, setShowUsers] = useState(true);
-  const [newMessages, setNewMessages] = useState({}); 
+  const [newMessages, setNewMessages] = useState({});
   const [error, setError] = useState("");
   const { username } = useParams();
   const navigate = useNavigate();
 
-document.addEventListener("DOMContentLoaded", async () => {
+  useEffect(() => {
     async function fetchCookie() {
       try {
         const response = await fetch("http://localhost:3001/cookie", {
@@ -22,60 +22,51 @@ document.addEventListener("DOMContentLoaded", async () => {
           credentials: "include",
         });
         const data = await response.json();
-        console.log("data", data);  
         if (data.sessionId) {
           socket.emit("existingCookie", data.sessionId, username);
         } else {
           navigate("/");
         }
       } catch (error) {
+        setError("Failed to fetch session cookie. Please try again.");
         console.error("Error fetching cookie:", error);
       }
     }
 
     fetchCookie();
-  });
-  
-  // socket.on("login_existUser", (username) => {
-  //   console.log("login_existUser", username);
-  //   if(username)
-  //   navigate(`/chat/${username}`);
-  //   else
-  //   navigate("/");
-  // });
-  Existing({ socket });
+  }, [socket, navigate, username]);
 
   useEffect(() => {
-    const getUsers = (userList) =>
-      setUsers(
-        userList.map((user, index) => ({
-          username: user.username,
-          connection: user.connection,
-        }))
-      );
+    const getUsers = (userList) => {
+      setUsers(userList.map((user) => ({
+        username: user.username,
+        connection: user.connection,
+      })));
+    };
+
     const updateRoomList = (roomList) => {
       setRooms(roomList);
       roomList.forEach((room) => {
         socket.emit("join_room", room);
-        // socket.emit("get_rooms", username);
       });
     };
 
-    const handlePrivateMessage = ({ content, from, to}) => {
+    const handlePrivateMessage = ({ content, from, to }) => {
       if (to === username) {
         setNewMessages((prevMessages) => ({
-          // ...prevMessages,
+          ...prevMessages,
           [from]: (prevMessages[from] || 0) + 1,
         }));
       }
     };
-    
+
     const handleRoomMessage = ({ content, from, roomName }) => {
-      
-      setNewMessages((prevMessages) => ({
-        ...prevMessages,
-        [from]: (prevMessages[from] || 0) + 1,
-      }));
+      if (roomName in newMessages) {
+        setNewMessages((prevMessages) => ({
+          ...prevMessages,
+          [roomName]: (prevMessages[roomName] || 0) + 1,
+        }));
+      }
     };
 
     socket.emit("get_users");
@@ -84,24 +75,25 @@ document.addEventListener("DOMContentLoaded", async () => {
     socket.on("update_roomList", updateRoomList);
     socket.on('pvt_message', handlePrivateMessage);
     socket.on('room_message', handleRoomMessage);
- 
+    socket.on("error", (err) => {
+      setError(  err);
+    });
 
     return () => {
       socket.off("update_users", getUsers);
       socket.off("update_roomList", updateRoomList);
       socket.off('pvt_message', handlePrivateMessage);
+      socket.off('room_message', handleRoomMessage);
     };
   }, [socket, username]);
 
   const handleUserClick = (user) => {
     setRecipient(user);
-
     setNewMessages((prevMessages) => ({
       ...prevMessages,
       [user]: 0,  // Reset the message count to 0
     }));
-    
-   navigate(`/chat/${username}/${user}`);
+    navigate(`/chat/${username}/${user}`);
   };
 
   const handleRoomClick = (room) => {
@@ -113,25 +105,25 @@ document.addEventListener("DOMContentLoaded", async () => {
     if (room.trim()) {
       socket.emit("create_room", room, username);
       setRoom("");
-      setError("");
+      setError(""); // Clear error on successful submission
+    } else {
+      setError("Room name cannot be empty.");
     }
   };
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
     socket.emit("logout");
-    async function deleteCookie() {
-      try {
-        const response = await fetch("http://localhost:3001/cookie", {
-          method: "DELETE",
-          credentials: "include",
-        });
-        const data = await response.json();
-        console.log("Cookie deleted:", data);
-      } catch (error) {
-        console.error("Error deleting cookie:", error);
-      }
+    try {
+      const response = await fetch("http://localhost:3001/cookie", {
+        method: "DELETE",
+        credentials: "include",
+      });
+      const data = await response.json();
+      console.log("Cookie deleted:", data);
+    } catch (error) {
+      setError("Error deleting cookie. Please try again.");
+      console.error("Error deleting cookie:", error);
     }
-    deleteCookie();
     navigate("/");
   };
 
@@ -160,28 +152,26 @@ document.addEventListener("DOMContentLoaded", async () => {
         {error && <p className="error">{error}</p>}
         {showUsers ? (
           <div className="users">
-            {users.map(
-              (user, index) =>
-                user.username !== username && (
-                  <div className="userChat">
-                    <div
-                      key={index}
-                      onClick={() => handleUserClick(user.username)}
-                      className="userName"
-                      style={{
-                        borderLeft: user.connection
-                          ? "5px solid green"
-                          : "5px solid red",
-                      }}
-                    >
-                      {user.username}
-                    </div>
-                    {newMessages[user.username] > 0 && (
-                      <div className="badge">{newMessages[user.username]}</div>
-                     )}
+            {users.map((user, index) => (
+              user.username !== username && (
+                <div key={index} className="userChat">
+                  <div
+                    onClick={() => handleUserClick(user.username)}
+                    className="userName"
+                    style={{
+                      borderLeft: user.connection
+                        ? "5px solid green"
+                        : "5px solid red",
+                    }}
+                  >
+                    {user.username}
                   </div>
-                )
-            )}
+                  {newMessages[user.username] > 0 && (
+                    <div className="badge">{newMessages[user.username]}</div>
+                  )}
+                </div>
+              )
+            ))}
           </div>
         ) : (
           <div className="rooms">

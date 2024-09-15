@@ -25,7 +25,7 @@ function ChatArea({ socket }) {
           credentials: "include",
         });
         const data = await response.json();
-        console.log("data", data);
+        // console.log("data", data);
         if (data.sessionId) {
           socket.emit("existingCookie", data.sessionId, username, recipient || roomName);
         } else {
@@ -105,7 +105,7 @@ function ChatArea({ socket }) {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    console.log("handleSubmit", input, recipient, roomName, username);
+    // console.log("handleSubmit", input, recipient, roomName, username);
     if (input.trim()) {
       const message = { content: input, from: username, to: recipient, room: roomName };
       if (recipient) {

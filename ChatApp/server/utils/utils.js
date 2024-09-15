@@ -11,7 +11,7 @@ const handleError = (socket, message) => {
   };
   
   // const createSession = async (sessionId,userId) => {
-  //   // const sessionId = uuid.v4();
+  //   // const sessionId = v4();
   //   const session = new SessionModel({
   //     sessionId,
   //     userId,
