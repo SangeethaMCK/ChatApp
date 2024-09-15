@@ -17,7 +17,7 @@ function App({ socket }) {
 document.addEventListener("DOMContentLoaded", async () => {
     async function fetchCookie() {
       try {
-        const response = await fetch("http://localhost:3000/cookie", {
+        const response = await fetch("http://localhost:3001/cookie", {
           method: "GET",
           credentials: "include",
         });
@@ -121,7 +121,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     socket.emit("logout");
     async function deleteCookie() {
       try {
-        const response = await fetch("http://localhost:3000/cookie", {
+        const response = await fetch("http://localhost:3001/cookie", {
           method: "DELETE",
           credentials: "include",
         });

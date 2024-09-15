@@ -20,7 +20,7 @@ function ChatArea({ socket }) {
   useEffect(() => {
     async function fetchCookie() {
       try {
-        const response = await fetch("http://localhost:3000/cookie", {
+        const response = await fetch("http://localhost:3001/cookie", {
           method: "GET",
           credentials: "include",
         });

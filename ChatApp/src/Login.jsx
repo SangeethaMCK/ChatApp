@@ -12,7 +12,7 @@ function Login({ socket }) {
   useEffect(() => {
     async function fetchCookie() {
       try {
-        const response = await fetch("http://localhost:3000/cookie", {
+        const response = await fetch("http://localhost:3001/cookie", {
           method: "GET",
           credentials: "include",
           mode: "cors",
@@ -38,7 +38,7 @@ function Login({ socket }) {
 
   async function setCookie(sessionId, username) {
     try {
-      const response = await fetch("http://localhost:3000/cookie", {
+      const response = await fetch("http://localhost:3001/cookie", {
         method: "POST",
         credentials: "include",
         body: JSON.stringify({ sessionId }),

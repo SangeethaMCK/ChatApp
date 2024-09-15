@@ -6,7 +6,7 @@ import SignUp from './Signup.jsx'
 
 import io from 'socket.io-client';
 
-const socket = io("http://localhost:3000", { // Use your local network IP
+const socket = io("http://localhost:3001", { // Use your local network IP
   transports: ["websocket"],
   withCredentials: true,
 });

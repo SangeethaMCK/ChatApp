@@ -3,7 +3,7 @@ import dotenv from 'dotenv';
 dotenv.config();
 
  export const connectDB = async () => {
-  const mongoUri = "mongodb://localhost:27017/ChatApp";
+  const mongoUri = process.env.MONGO_URI;
 
   mongoose.connect(mongoUri, {
     // No need for useNewUrlParser and useUnifiedTopology options
