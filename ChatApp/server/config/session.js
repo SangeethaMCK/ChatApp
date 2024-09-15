@@ -1,5 +1,6 @@
 import session from 'express-session';
 import dotenv from 'dotenv';
+import MongoStore from 'connect-mongo';
 dotenv.config();
 
 const sessionValidity = 1000 * 60 * 60 * 24 * 7; // 1 week
@@ -10,6 +11,7 @@ const sessionMiddleware = session({
   resave: false,
   saveUninitialized: false,
   cookie: { maxAge: sessionValidity },
+  store: MongoStore.create({ mongoUrl: process.env.MONGODB_URI }),
 });
 
 export default sessionMiddleware;
